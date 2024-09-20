@@ -3,11 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.10.35027.167
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KnowYourWatts.API", "KnowYourWatts.API\KnowYourWatts.API.csproj", "{6BC711B7-95E1-42A5-AB9F-B10A407DC913}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KnowYourWatts.Tests", "KnowYourWatts.Tests\KnowYourWatts.Tests.csproj", "{FAA5B35A-8997-4D30-BEB0-1F618BFC5316}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KnowYourWatts.Logic", "KnowYourWatts.Logic\KnowYourWatts.Logic.csproj", "{413BF640-72CF-406B-B159-6AE94D0DF306}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,18 +11,10 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{6BC711B7-95E1-42A5-AB9F-B10A407DC913}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6BC711B7-95E1-42A5-AB9F-B10A407DC913}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6BC711B7-95E1-42A5-AB9F-B10A407DC913}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6BC711B7-95E1-42A5-AB9F-B10A407DC913}.Release|Any CPU.Build.0 = Release|Any CPU
 		{FAA5B35A-8997-4D30-BEB0-1F618BFC5316}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{FAA5B35A-8997-4D30-BEB0-1F618BFC5316}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FAA5B35A-8997-4D30-BEB0-1F618BFC5316}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FAA5B35A-8997-4D30-BEB0-1F618BFC5316}.Release|Any CPU.Build.0 = Release|Any CPU
-		{413BF640-72CF-406B-B159-6AE94D0DF306}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{413BF640-72CF-406B-B159-6AE94D0DF306}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{413BF640-72CF-406B-B159-6AE94D0DF306}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{413BF640-72CF-406B-B159-6AE94D0DF306}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
