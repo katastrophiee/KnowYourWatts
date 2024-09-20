@@ -1,1 +1,1 @@
-# KnowYourWatts
+# KnowYourWatts™
