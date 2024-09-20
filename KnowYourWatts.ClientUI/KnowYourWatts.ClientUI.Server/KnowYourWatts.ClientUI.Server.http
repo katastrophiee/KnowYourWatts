@@ -1,0 +1,6 @@
+@KnowYourWatts.ClientUI.Server_HostAddress = http://localhost:5265
+
+GET {{KnowYourWatts.ClientUI.Server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
