@@ -12,7 +12,7 @@ public class SocketListener
         StartServer();
         return 0;
     }
-
+    
     public static void StartServer()
     {
         // Get Host IP Address that is used to establish a connection
@@ -29,8 +29,8 @@ public class SocketListener
             // A Socket must be associated with an endpoint using the Bind method
             listener.Bind(localEndPoint);
             // Specify how many requests a Socket can listen before it gives Server busy response.
-            // We will listen 10 requests at a time
-            listener.Listen(10);
+            // We will listen 14 requests at a time
+            listener.Listen(14);
 
             Console.WriteLine("Waiting for a connection...");
             Socket handler = listener.Accept();
