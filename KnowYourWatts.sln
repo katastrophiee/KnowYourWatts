@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KnowYourWatts.Server", "Kno
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KnowYourWatts.DTO", "KnowYourWatts.DTO\KnowYourWatts.DTO.csproj", "{8A21E41F-AE13-4D49-B2FC-038659674FFE}"
 EndProject
-Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "knowyourwatts.clientui.client", "KnowYourWatts.ClientUI\knowyourwatts.clientui.client\knowyourwatts.clientui.client.esproj", "{FFA299DB-ECB8-4BCB-8B34-EDDC8C6B4110}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "KnowYourWatts.ClientUI", "KnowYourWatts.ClientUI", "{A82BCEBA-9E06-457E-ACDB-F95140C3ED2C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -29,12 +29,6 @@ Global
 		{8A21E41F-AE13-4D49-B2FC-038659674FFE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8A21E41F-AE13-4D49-B2FC-038659674FFE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8A21E41F-AE13-4D49-B2FC-038659674FFE}.Release|Any CPU.Build.0 = Release|Any CPU
-		{FFA299DB-ECB8-4BCB-8B34-EDDC8C6B4110}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FFA299DB-ECB8-4BCB-8B34-EDDC8C6B4110}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FFA299DB-ECB8-4BCB-8B34-EDDC8C6B4110}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
-		{FFA299DB-ECB8-4BCB-8B34-EDDC8C6B4110}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FFA299DB-ECB8-4BCB-8B34-EDDC8C6B4110}.Release|Any CPU.Build.0 = Release|Any CPU
-		{FFA299DB-ECB8-4BCB-8B34-EDDC8C6B4110}.Release|Any CPU.Deploy.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
