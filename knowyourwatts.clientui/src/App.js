@@ -2,8 +2,17 @@ import React, { useEffect } from 'react';
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+import MonitorData from './MonitorData';
 
 function App() {
+    var monitorData = new MonitorData('0', '0', '0');
+    var data = monitorData.getData();
+    window.onload = function() {
+        document.getElementById('current-tab-pane').textContent = data.totalBill;
+        document.getElementById('todays-tab-pane').textContent = data.currentRateMoney;
+        document.getElementById('weekly-tab-pane').textContent = data.currentRateKwh;
+    }
+        
    useEffect(() => {
         function displayTime() {
             const now = new Date();
