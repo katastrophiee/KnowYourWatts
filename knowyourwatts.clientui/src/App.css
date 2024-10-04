@@ -11,21 +11,6 @@ html, body {
   height:100%
 }
 
-.App-header {
-    text-align: center;
-    vertical-align: central;
-    padding: 2px;
-    background-color: #323232;
-    color: #fff;
-    font-size: 24px;
-}
-
-.nav-tabs {
-    border-color: transparent !important;
-}
-
-.nav-item{
-}
 
 .nav-link.active {
     background-color: #345365 !important;
@@ -40,16 +25,6 @@ html, body {
     font-weight:bold;
 }
 
-.tab-pane {
-    background-color: #323232;
-    color: #ECECEC;
-    border-radius: 10px;
-
-}
-
-.icon {
-    height: 40px;
-}
 
 
 
