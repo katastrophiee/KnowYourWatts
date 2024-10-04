@@ -4,15 +4,14 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import { MonitorData } from "./MonitorData";
 import * as Styled from "./StyledComponents.tsx";
+
 function App() {
     const [time, setTime] = useState<string>();
     const [homePageData, setHomePageData] = useState<MonitorData>();
-    const [activeTab, setToggleState] = useState(1);
+    const [activeTab, setActiveTab] = useState<number>(1);
 
     useEffect(() => {
-
         setInterval(() => {
-    
           const dateObject = new Date()
     
           const hour = dateObject.getHours()
@@ -22,8 +21,7 @@ function App() {
           
           setTime(currentTime)
         }, 1000)
-    
-      }, [])
+    }, [])
 
     return (
         <div className="App">
@@ -33,18 +31,19 @@ function App() {
             <div className="p-2">
                 <Styled.NavTabs>
                     <Styled.NavItem>
-                        <button className={activeTab === 1 ? "nav-link active" : "nav-link"} onClick={() => setToggleState(1)}>tab 1</button>
+                    <button className={`nav-link ${activeTab === 1 ? "active" : ""}`} onClick={() => setActiveTab(1)}>Current Usage</button>
+
                     </Styled.NavItem>
                     <Styled.NavItem>
-                        <button className={activeTab === 2 ? "nav-link active" : "nav-link"} onClick={() => setToggleState(2)}>tab 2</button>
+                        <button className={`nav-link ${activeTab === 2 ? "active" : ""}`} onClick={() => setActiveTab(2)}>Today's Usage</button>
                     </Styled.NavItem>
                     <Styled.NavItem>
-                        <button className={activeTab === 3 ? "nav-link active" : "nav-link"} onClick={() => setToggleState(3)}>tab 3</button>
+                        <button className={`nav-link ${activeTab === 3 ? "active" : ""}`} onClick={() => setActiveTab(3)}>Weekly Usage</button>
                     </Styled.NavItem>
                 </Styled.NavTabs>
 
                 <div className="content"> 
-                    {activeTab === 1 && 
+                    {activeTab == 1 && 
                         <Styled.TabPane>
                             <div className="container row">
                                 <Styled.Usage>Usage:</Styled.Usage>
@@ -52,8 +51,10 @@ function App() {
                             </div>
                             <p className="px-3">&pound;1.80</p>
                             <p className="px-3">18KW</p>
-                        </Styled.TabPane>}
-                    {activeTab === 2 && 
+                        </Styled.TabPane>
+                    }
+
+                    {activeTab == 2 && 
                         <Styled.TabPane>
                             <div className="container row">
                                 <Styled.Usage>Usage:</Styled.Usage>   
@@ -61,8 +62,10 @@ function App() {
                             </div>
                             <p className="px-3">&pound;1.80</p>
                             <p className="px-3">18KW</p>
-                        </Styled.TabPane>}
-                    {activeTab === 3 && 
+                        </Styled.TabPane>
+                    }
+
+                    {activeTab == 3 && 
                         <Styled.TabPane>
                             <div className="container row">
                                 <Styled.Usage>Usage:</Styled.Usage>
@@ -70,13 +73,12 @@ function App() {
                             </div>
                             <p className="px-3">&pound;1.80</p>
                             <p className="px-3">18KW</p>
-                        </Styled.TabPane>}
+                        </Styled.TabPane>
+                    }
                 </div>
             </div>
         </div>
-          
     );
 }
 
 export default App;
-
