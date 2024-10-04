@@ -1,15 +1,55 @@
-.App {
-  background-color: #585858
+html, body {
+    height: 100%;
 }
 
-.App-header{
-    text-align:center;
-    vertical-align:central;
+.root{
+    height:100%;
+}
+
+.App {
+  background-color: #585858;
+  height:100%
+}
+
+.App-header {
+    text-align: center;
+    vertical-align: central;
     padding: 2px;
-    color:#fff;
+    background-color: #323232;
+    color: #fff;
     font-size: 24px;
 }
 
+.nav-tabs {
+    border-color: transparent !important;
+}
+
+.nav-item{
+}
+
+.nav-link.active {
+    background-color: #345365 !important;
+    color: #ECECEC!important;
+    font-weight:bold;
+    border-color:transparent !important;
+}
+
+.nav-link {
+    background-color: #323232 !important;
+    color: #ECECEC !important;
+    font-weight:bold;
+}
+
+.tab-pane {
+    background-color: #323232;
+    color: #ECECEC;
+    border-radius: 10px;
+
+}
+
+.icon {
+    height: 40px;
+}
 
 
 
