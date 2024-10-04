@@ -3,7 +3,7 @@ import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import { MonitorData } from "./MonitorData";
-import { FlexContainer } from "./StyledComponents";
+import { FlexContainer } from "./StyledComponents.tsx";
 
 function App() {
     const [time, setTime] = useState<string>();
