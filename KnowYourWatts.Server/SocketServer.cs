@@ -46,7 +46,7 @@ public class ConnectionHandler(Socket handler)
                 switch (jsonData.Type)
                 {
                     case RequestType.CurrentUsage:
-                        var dailyRequest = JsonConvert.DeserializeObject<SmartMeterCalculationRequest>(data);
+                        var dailyRequest = JsonConvert.DeserializeObject<SmartMeterCalculationRequest>(jsonData.Data);
                         responseData = CalculateDailyUsage(dailyRequest);
                         break;
 
