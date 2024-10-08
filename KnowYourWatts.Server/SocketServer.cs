@@ -1,68 +1,93 @@
-﻿using System;
+﻿using KnowYourWatts.DTO;
+using KnowYourWatts.DTO.Requests;
+using Newtonsoft.Json;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
-// Socket Listener acts as a server and listens to the incoming
-// messages on the specified port and protocol.
-public class SocketListener
+namespace KnowYourWatts.Server;
+
+public class SocketServer
 {
-    public static int Main(String[] args)
+    private static Server? Server;
+
+    public static void Main(string[] args)
     {
-        StartServer();
-        return 0;
+        var host = Dns.GetHostEntry("localhost");
+        var ipAddress = host.AddressList[0];
+        var localEndPoint = new IPEndPoint(ipAddress, 11000);
+
+        Server = new Server(host, ipAddress, localEndPoint);
+        Server.Start();
     }
-    
-    public static void StartServer()
+}
+
+public class ConnectionHandler(Socket handler)
+{
+    private readonly Socket _handler = handler;
+
+    public void HandleConnection()
     {
-        // Get Host IP Address that is used to establish a connection
-        // In this case, we get one IP address of localhost that is IP : 127.0.0.1
-        // If a host has multiple addresses, you will get a list of addresses
-        IPHostEntry host = Dns.GetHostEntry("localhost");
-        IPAddress ipAddress = host.AddressList[0];
-        IPEndPoint localEndPoint = new IPEndPoint(ipAddress, 11000);
-
-        try {
-
-            // Create a Socket that will use Tcp protocol
-            Socket listener = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            // A Socket must be associated with an endpoint using the Bind method
-            listener.Bind(localEndPoint);
-            // Specify how many requests a Socket can listen before it gives Server busy response.
-            // We will listen 14 requests at a time
-            listener.Listen(14);
-
-            Console.WriteLine("Waiting for a connection...");
-            Socket handler = listener.Accept();
-
-             // Incoming data from the client.
-             string data = null;
-             byte[] bytes = null;
-
-            while (true)
-            {
-                bytes = new byte[1024];
-                int bytesRec = handler.Receive(bytes);
-                data += Encoding.ASCII.GetString(bytes, 0, bytesRec);
-                if (data.IndexOf("<EOF>") > -1)
-                {
-                    break;
-                }
-            }
-
-            Console.WriteLine("Text received : {0}", data);
-
-            byte[] msg = Encoding.ASCII.GetBytes(data);
-            handler.Send(msg);
-            handler.Shutdown(SocketShutdown.Both);
-            handler.Close();
-        }
-        catch (Exception e)
+        try
         {
-            Console.WriteLine(e.ToString());
-        }
+            byte[] buffer = new byte[1024];
+            int bytesReceived = _handler.Receive(buffer);
 
-        Console.WriteLine("\n Press any key to continue...");
-        Console.ReadKey();
+            string data = Encoding.ASCII.GetString(buffer, 0, bytesReceived);
+
+            //remove after testing
+            Console.WriteLine("Data received: " + data);
+
+            var jsonData = JsonConvert.DeserializeObject<ServerRequest>(data);
+
+            if (jsonData is not null)
+            {
+                string responseData;
+                switch (jsonData.Type)
+                {
+                    case RequestType.CurrentUsage:
+                        var dailyRequest = JsonConvert.DeserializeObject<SmartMeterCalculationRequest>(jsonData.Data);
+                        responseData = CalculateDailyUsage(dailyRequest);
+                        break;
+
+                    case RequestType.TodaysUsage:
+                        //to do
+                        responseData = "";
+                        break;
+
+                    case RequestType.WeeklyUsage:
+                        //to do
+                        responseData = "";
+                        break;
+
+                    default:
+                        // should probs change to be logging
+                        // we may wanna make a response object with a data and error field
+                        responseData = "";
+                        Console.WriteLine("Request type not recognized: " + jsonData.Type);
+                        break;
+                }
+
+                // respond to client
+                byte[] responseBytes = Encoding.ASCII.GetBytes(responseData);
+                _handler.Send(responseBytes);
+            }
+            else
+            {
+
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error handling connection: " + ex.ToString());
+        }
+    }
+
+    private string CalculateDailyUsage(SmartMeterCalculationRequest? request)
+    {
+        // to do
+        // we'll calculate the result then convert it to json and send it back to the client
+        // also need to handle nulls here
+        return "";
     }
 }
