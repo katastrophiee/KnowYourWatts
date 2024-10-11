@@ -85,9 +85,9 @@ public class ConnectionHandler(Socket handler)
 
     private string CalculateDailyUsage(SmartMeterCalculationRequest? request)
     {
-        // to do
-        // we'll calculate the result then convert it to json and send it back to the client
-        // also need to handle nulls here
+        ServerMathLogic math = new ServerMathLogic();
+        double calculatedCost = math.CalculateCost(request.TariffType, request.CurrentRateKwh);
+        // Not sure how to add this to the request, Kaytlen to follow up
         return "";
     }
 }
