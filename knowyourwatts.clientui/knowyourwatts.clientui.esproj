@@ -4956,4 +4956,7 @@
     <None Include="node_modules\node_modules\yauzl\package.json" />
     <None Include="node_modules\node_modules\yauzl\README.md" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="src\" />
+  </ItemGroup>
 </Project>
