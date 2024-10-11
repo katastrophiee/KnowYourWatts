@@ -1,5 +1,6 @@
-﻿using KnowYourWatts.DTO;
+﻿using KnowYourWatts.DTO.Enums;
 using KnowYourWatts.DTO.Requests;
+using KnowYourWatts.DTO.Response;
 using Newtonsoft.Json;
 using System.Net;
 using System.Net.Sockets;
@@ -25,6 +26,7 @@ public class SocketServer
 public class ConnectionHandler(Socket handler)
 {
     private readonly Socket _handler = handler;
+    private readonly ServerMathLogic _meterCalculations = new();
 
     public void HandleConnection()
     {
@@ -42,52 +44,84 @@ public class ConnectionHandler(Socket handler)
 
             if (jsonData is not null)
             {
-                string responseData;
-                switch (jsonData.Type)
+                CalculationResponse calculationResponse = jsonData.Type switch
                 {
-                    case RequestType.CurrentUsage:
-                        var dailyRequest = JsonConvert.DeserializeObject<SmartMeterCalculationRequest>(jsonData.Data);
-                        responseData = CalculateDailyUsage(dailyRequest);
-                        break;
+                    RequestType.CurrentUsage => CalculateCurrentUsage(JsonConvert.DeserializeObject<CurrentUsageRequest>(jsonData.Data)),
+                    RequestType.TodaysUsage => CalculateDailyUsage(JsonConvert.DeserializeObject<DailyUsageRequest>(jsonData.Data)),
+                    RequestType.WeeklyUsage => CalculateWeeklyUsage(JsonConvert.DeserializeObject<WeeklyUsageRequest>(jsonData.Data)),
+                    _ => new CalculationResponse($"The request type {jsonData.Type} was not recognized.")
+                };
 
-                    case RequestType.TodaysUsage:
-                        //to do
-                        responseData = "";
-                        break;
-
-                    case RequestType.WeeklyUsage:
-                        //to do
-                        responseData = "";
-                        break;
-
-                    default:
-                        // should probs change to be logging
-                        // we may wanna make a response object with a data and error field
-                        responseData = "";
-                        Console.WriteLine("Request type not recognized: " + jsonData.Type);
-                        break;
-                }
-
-                // respond to client
-                byte[] responseBytes = Encoding.ASCII.GetBytes(responseData);
-                _handler.Send(responseBytes);
+                _handler.Send(Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(calculationResponse)));
             }
             else
             {
-
+                var response = Encoding.ASCII.GetBytes("The request did not contain any data.");
+                _handler.Send(response);
             }
         }
         catch (Exception ex)
         {
             Console.WriteLine("Error handling connection: " + ex.ToString());
+            var response = Encoding.ASCII.GetBytes("An unknown error occured");
+            _handler.Send(response);
         }
     }
 
-    private string CalculateDailyUsage(SmartMeterCalculationRequest? request)
+    private CalculationResponse CalculateCurrentUsage(CurrentUsageRequest? request)
     {
-        // to do
-        // we'll calculate the result then convert it to json and send it back to the client
-        // also need to handle nulls here
-        return "";
+        try
+        {
+            if (request is not null)
+            {
+                var calculatedCost = _meterCalculations.CalculateCost(request.TarrifType, request.CurrentReading);
+
+                return new(calculatedCost);
+            }
+
+            return new("The request data was empty.");
+        }
+        catch (Exception ex)
+        {
+            return new("An unknown error occured when trying to calculate the current cost: " + ex.Message);
+        }
+    }
+
+    private CalculationResponse CalculateDailyUsage(DailyUsageRequest? request)
+    {
+        try
+        {
+            if (request is not null)
+            {
+                var calculatedCost = _meterCalculations.CalculateCost(request.TarrifType, request.CurrentReading);
+
+                return new(calculatedCost);
+            }
+
+            return new("The request data was empty.");
+        }
+        catch (Exception ex)
+        {
+            return new("An unknown error occured when trying to calculate the daily cost: " + ex.Message);
+        }
+    }
+
+    private CalculationResponse CalculateWeeklyUsage(WeeklyUsageRequest? request)
+    {
+        try
+        {
+            if (request is not null)
+            {
+                var calculatedCost = _meterCalculations.CalculateCost(request.TarrifType, request.CurrentReading);
+
+                return new(calculatedCost);
+            }
+
+            return new("The request data was empty.");
+        }
+        catch (Exception ex)
+        {
+            return new("An unknown error occured when trying to calculate the weekly cost: " + ex.Message);
+        }
     }
 }
