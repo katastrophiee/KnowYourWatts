@@ -26,7 +26,6 @@ public class SocketServer
 public class ConnectionHandler(Socket handler)
 {
     private readonly Socket _handler = handler;
-    private double _currentRate = 0.25;
 
     public void HandleConnection()
     {
@@ -68,11 +67,7 @@ public class ConnectionHandler(Socket handler)
                         break;
                 }
 
-                byte[] responseBytes = !string.IsNullOrEmpty(response.Error) 
-                    ? Encoding.ASCII.GetBytes(response.Error)
-                    : Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(response.CalculationData));
-
-                _handler.Send(responseBytes);
+                _handler.Send(Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(response)));
             }
             else
             {
@@ -105,8 +100,21 @@ public class ConnectionHandler(Socket handler)
     }
     private CalculationResponse CalculateWeeklyUsage(CurrentUsageRequest? request)
     {
-        SmartMeterCalculationResponse data = null; // change to SmartMeterCalculationResponse from after calc
+        try
+        {
+            if (request is not null)
+            {
+                var math = new ServerMathLogic();
+                var calculatedCost = math.CalculateCost(request.TarrifType, request.CurrentReading);
 
-        return new(data);
+                return new(calculatedCost);
+            }
+
+            return new("The request data was empty.");
+        }
+        catch (Exception ex)
+        {
+            return new("An unknown error occured when trying to calulate the weekly cost: " + ex.Message);
+        }
     }
 }
