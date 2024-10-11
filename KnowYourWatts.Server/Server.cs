@@ -1,10 +1,8 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Net;
+﻿using System.Net;
 using System.Net.Sockets;
 
 namespace KnowYourWatts.Server;
 
-[method: SetsRequiredMembers]
 public class Server(IPHostEntry host, IPAddress ipAddress, IPEndPoint localEndPoint)
 {
     private readonly IPHostEntry Host = host ?? throw new ArgumentNullException(nameof(host));
