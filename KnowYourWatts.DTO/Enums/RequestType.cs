@@ -1,4 +1,4 @@
-﻿namespace KnowYourWatts.DTO;
+﻿namespace KnowYourWatts.DTO.Enums;
 
 public enum RequestType
 {

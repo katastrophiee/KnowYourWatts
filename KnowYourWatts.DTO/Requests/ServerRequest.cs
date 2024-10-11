@@ -1,4 +1,6 @@
-﻿namespace KnowYourWatts.DTO.Requests;
+﻿using KnowYourWatts.DTO.Enums;
+
+namespace KnowYourWatts.DTO.Requests;
 
 public class ServerRequest
 {
