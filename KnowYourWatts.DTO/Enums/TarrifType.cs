@@ -7,12 +7,12 @@ public enum TarrifType
     [Display(Name = "Fixed")]
     Fixed = 0,
 
-    [Display(Name = "Fixed")]
+    [Display(Name = "Flex")]
     Flex = 1,
 
-    [Display(Name = "Fixed")]
+    [Display(Name = "Green")]
     Green = 2,
 
-    [Display(Name = "Fixed")]
+    [Display(Name = "OffPeak")]
     OffPeak = 3
 }
