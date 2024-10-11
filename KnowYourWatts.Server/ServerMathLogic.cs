@@ -6,7 +6,8 @@ namespace KnowYourWatts.Server;
 public sealed class ServerMathLogic
 {
     // Dictionary containing various tariff types and their rates per KWh
-    private Dictionary<string, double> tariffs = new Dictionary<string, double>
+    // Will want to move to 'db' eventually
+    private readonly Dictionary<string, double> tariffs = new()
     {
         { "Fixed", 24.50 },
         { "Flex", 26.20 },
