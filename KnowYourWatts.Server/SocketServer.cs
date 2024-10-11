@@ -1,5 +1,6 @@
-﻿using KnowYourWatts.DTO;
+﻿using KnowYourWatts.DTO.Enums;
 using KnowYourWatts.DTO.Requests;
+using KnowYourWatts.DTO.Response;
 using Newtonsoft.Json;
 using System.Net;
 using System.Net.Sockets;
@@ -25,6 +26,7 @@ public class SocketServer
 public class ConnectionHandler(Socket handler)
 {
     private readonly Socket _handler = handler;
+    private double _currentRate = 0.25;
 
     public void HandleConnection()
     {
@@ -42,52 +44,69 @@ public class ConnectionHandler(Socket handler)
 
             if (jsonData is not null)
             {
-                string responseData;
+                var requestData = JsonConvert.DeserializeObject<CurrentUsageRequest>(jsonData.Data);
+
+                CalculationResponse response;
                 switch (jsonData.Type)
                 {
                     case RequestType.CurrentUsage:
-                        var dailyRequest = JsonConvert.DeserializeObject<SmartMeterCalculationRequest>(jsonData.Data);
-                        responseData = CalculateDailyUsage(dailyRequest);
+                        response = CalculateCurrentUsage(requestData);
                         break;
 
                     case RequestType.TodaysUsage:
-                        //to do
-                        responseData = "";
+                        response = CalculateDailyUsage(requestData);
                         break;
 
                     case RequestType.WeeklyUsage:
-                        //to do
-                        responseData = "";
+                        response = CalculateWeeklyUsage(requestData);
                         break;
 
                     default:
                         // should probs change to be logging
-                        // we may wanna make a response object with a data and error field
-                        responseData = "";
                         Console.WriteLine("Request type not recognized: " + jsonData.Type);
+                        response = new($"The request type {jsonData.Type} was not recognized.");
                         break;
                 }
 
-                // respond to client
-                byte[] responseBytes = Encoding.ASCII.GetBytes(responseData);
+                byte[] responseBytes = !string.IsNullOrEmpty(response.Error) 
+                    ? Encoding.ASCII.GetBytes(response.Error)
+                    : Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(response.CalculationData));
+
                 _handler.Send(responseBytes);
             }
             else
             {
-
+                var response = Encoding.ASCII.GetBytes("The request did not contain any data.");
+                _handler.Send(response);
             }
         }
         catch (Exception ex)
         {
             Console.WriteLine("Error handling connection: " + ex.ToString());
+            var response = Encoding.ASCII.GetBytes("An unknown error occured");
+            _handler.Send(response);
         }
     }
 
-    private string CalculateDailyUsage(SmartMeterCalculationRequest? request)
+    private CalculationResponse CalculateCurrentUsage(CurrentUsageRequest? request)
     {
-        // to do
         // we'll calculate the result then convert it to json and send it back to the client
-        // also need to handle nulls here
-        return "";
+
+        SmartMeterCalculationResponse data = null; // change to SmartMeterCalculationResponse from after calc
+
+        return new(data);
+    }
+
+    private CalculationResponse CalculateDailyUsage(CurrentUsageRequest? request)
+    {
+        SmartMeterCalculationResponse data = null; // change to SmartMeterCalculationResponse from after calc
+
+        return new(data);
+    }
+    private CalculationResponse CalculateWeeklyUsage(CurrentUsageRequest? request)
+    {
+        SmartMeterCalculationResponse data = null; // change to SmartMeterCalculationResponse from after calc
+
+        return new(data);
     }
 }
