@@ -30,6 +30,12 @@ namespace ClientUI
         public MainWindow()
         {
             InitializeComponent();
+            // ERROR: -		$exception	{"Object reference not set to an instance of an object."}	System.NullReferenceException
+            _socketClient.ConnectToServer();
+
+            // Sample data
+            // ERROR: -		$exception	{"Object reference not set to an instance of an object."}	System.NullReferenceException
+            _socketClient.SendRequest(RequestType.TodaysUsage, new CurrentUsageRequest { TarrifType = TarrifType.Fixed, CurrentReading=23.53});
         }
         // On program window closing, close socket connection.
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)

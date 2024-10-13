@@ -1,14 +1,10 @@
 ﻿using KnowYourWatts.DTO.Enums;
 using KnowYourWatts.DTO.Requests;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Sockets;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
+using System.Text;
 
 namespace ClientUI
 {
@@ -56,11 +52,9 @@ namespace ClientUI
                     Type = requestType,
                     Data = JsonConvert.SerializeObject(currentUsageRequest)
                 };
-
-                //
-                // ADD CODE FOR SENDING REQUEST HERE
-                //
-
+                string dataToSend = JsonConvert.SerializeObject(request);
+                byte[] data = Encoding.UTF8.GetBytes(dataToSend);
+                clientSocket.SendAsync(data);
             }
             // Catch exception if request cannot be made (currently). Later will also catch request send?
             catch (Exception ex)
