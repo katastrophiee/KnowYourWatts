@@ -24,52 +24,24 @@ namespace ClientUI
     /// </summary>
     public partial class MainWindow : Window
     {
-        private Socket clientSocket;
+        // Potentially initialize? Will look later
+        // Create instance of SocketClient class
+        private SocketClient _socketClient;
         public MainWindow()
         {
             InitializeComponent();
-        }
-        private void ConnectToServer()
-        {
-            try
-            {
-                var host = Dns.GetHostEntry("localhost");
-                var ipAddress = host.AddressList[0];
-                var remoteEndPoint = new IPEndPoint(ipAddress, 11000);
+            // ERROR: -		$exception	{"Object reference not set to an instance of an object."}	System.NullReferenceException
+            _socketClient.ConnectToServer();
 
-                clientSocket = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-                clientSocket.Connect(remoteEndPoint);
-                
-            }
-            catch (Exception ex)
-            {
-               MessageBox.Show(ex.Message);
-            }
+            // Sample data
+            // ERROR: -		$exception	{"Object reference not set to an instance of an object."}	System.NullReferenceException
+            _socketClient.SendRequest(RequestType.TodaysUsage, new CurrentUsageRequest { TarrifType = TarrifType.Fixed, CurrentReading=23.53});
         }
-        private void SendCurrentUsage(object sender, RoutedEventArgs e)
+        // On program window closing, close socket connection.
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            
+            _socketClient.Close();
         }
-        private void SendRequest(RequestType requestType,CurrentUsageRequest currentUsageRequest)
-        {
-            if(clientSocket == null || !clientSocket.Connected)
-            {
-                //Display error message
-                return;
-            }
-            try
-            {
-                var request = new ServerRequest
-                {
-                    Type = requestType,
-                    Data = JsonConvert.SerializeObject(currentUsageRequest)
-                };
 
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
-        }
     }
 }
