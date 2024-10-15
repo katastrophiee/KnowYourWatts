@@ -5,26 +5,142 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ClientUI"
         mc:Ignorable="d"
-        Title="KnowYourWatts" Height="275" Width="600">
+        Title="KnowYourWatts" Height="275" Width="600"
+        Background="#585858">
+
+    <Window.Resources>
+        <SolidColorBrush x:Key="SelectedBackground" Color="#FF3D566E" />
+        <SolidColorBrush x:Key="UnselectedBackground" Color="#FF424242" />
+        <SolidColorBrush x:Key="CommonBackground" Color="#323232" />
+        <SolidColorBrush x:Key="TabForeground" Color="White" />
+
+        <Style x:Key="TabItemStyle" TargetType="TabItem">
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border Name="Border" BorderThickness="1,1,1,0" BorderBrush="Transparent" CornerRadius="4,4,0,0" Margin="2,0">
+                            <ContentPresenter x:Name="ContentSite" 
+                                          VerticalAlignment="Center" 
+                                          HorizontalAlignment="Center" 
+                                          ContentSource="Header" 
+                                          Margin="10,10"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="{StaticResource SelectedBackground}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="False">
+                                <Setter TargetName="Border" Property="Background" Value="{StaticResource UnselectedBackground}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="UsageTextStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TabForeground}"/>
+            <Setter Property="Margin" Value="0,0,0,5"/>
+        </Style>
+    </Window.Resources>
+
     <Grid>
-        <Rectangle HorizontalAlignment="Center" Height="45" Stroke="Black" VerticalAlignment="Top" Width="600" Fill="#323232"/>
-        <TabControl Height="190" Width ="575" Margin="10,60,10,10">
-            <TabItem Header="TabItem" Width="187" Margin="-2,0,7,0" >
-                <Grid Background="#FFE5E5E5"/>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Time display -->
+        <TextBlock Grid.Row="0" x:Name="TimeDisplay" 
+               Background="{StaticResource CommonBackground}" 
+               Foreground="White"
+               FontSize="18" FontWeight="ExtraBold"
+               Padding="10"
+               HorizontalAlignment="Stretch"
+               TextAlignment="Center"/>
+
+        <!-- Tab Control -->
+        <TabControl Grid.Row="1" 
+                Background="{StaticResource CommonBackground}"  
+                Margin="5"  
+                BorderBrush="{StaticResource CommonBackground}">
+            <TabControl.Resources>
+                <!-- Apply TabItem style -->
+                <Style TargetType="TabItem" BasedOn="{StaticResource TabItemStyle}" />
+            </TabControl.Resources>
+
+            <TabItem Header="Current Usages" Foreground="{StaticResource TabForeground}" Width="190">
+                <Border Background="{StaticResource CommonBackground}" Margin="10">
+                    <Grid >
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0" Margin="10">
+                            <TextBlock Text="Usage:" FontWeight="Bold" Foreground="White" Margin="0,0,0,6"/>
+                            <TextBlock Text="£1.80" Foreground="White" Margin="0,0,0,5"/>
+                            <TextBlock Text="18.7KW" Foreground="White"/>
+                        </StackPanel>
+
+                        <Viewbox Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Top" Width="50" Height="60">
+                            <Canvas Width="448" Height="512">
+                                <Path Fill="#FFD43B" 
+Data="M349.4 44.6c5.9-13.7 1.5-29.7-10.6-38.5s-28.6-8-39.9 1.8l-256 224c-10 8.8-13.6 22.9-8.9 35.3S50.7 288 64 288l111.5 0L98.6 467.4c-5.9 13.7-1.5 29.7 10.6 38.5s28.6 8 39.9-1.8l256-224c10-8.8 13.6-22.9 8.9-35.3s-16.6-20.7-30-20.7l-111.5 0L349.4 44.6z"/>
+                            </Canvas>
+                        </Viewbox>
+                    </Grid>
+                </Border>
             </TabItem>
-            <TabItem Header="TabItem" Width ="187"  Margin="0,0,7,0" >
-                <Grid Background="#FFE5E5E5">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="79*"/>
-                        <ColumnDefinition Width="490*"/>
-                    </Grid.ColumnDefinitions>
-                </Grid>
+
+            <TabItem Header="Today's Usage" Foreground="{StaticResource TabForeground}" Width="190" Padding="10">
+                <Border Background="{StaticResource CommonBackground}" Margin="10" CornerRadius="10">
+                    <Grid >
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0" Margin="10">
+                            <TextBlock Text="Usage:" FontWeight="Bold" Foreground="White" Margin="0,0,0,6"/>
+                            <TextBlock Text="£1.81" Foreground="White" Margin="0,0,0,5"/>
+                            <TextBlock Text="18.7KW" Foreground="White"/>
+                        </StackPanel>
+
+                        <Viewbox Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Top" Width="50" Height="60">
+                            <Canvas Width="448" Height="512">
+                                <Path Fill="#FFD43B" 
+Data="M349.4 44.6c5.9-13.7 1.5-29.7-10.6-38.5s-28.6-8-39.9 1.8l-256 224c-10 8.8-13.6 22.9-8.9 35.3S50.7 288 64 288l111.5 0L98.6 467.4c-5.9 13.7-1.5 29.7 10.6 38.5s28.6 8 39.9-1.8l256-224c10-8.8 13.6-22.9 8.9-35.3s-16.6-20.7-30-20.7l-111.5 0L349.4 44.6z"/>
+                            </Canvas>
+                        </Viewbox>
+                    </Grid>
+                </Border>
             </TabItem>
-            <TabItem Header="TabItem" Width ="187" Margin="0,0,0,0" >
-                <Grid Background="#FFE5E5E5"/>
+
+            <TabItem Header="Week Usage" Foreground="{StaticResource TabForeground}" Width="190" Padding="10">
+                <Border Background="{StaticResource CommonBackground}" Margin="10" CornerRadius="10">
+                    <Grid >
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0" Margin="10">
+                            <TextBlock Text="Usage:" FontWeight="Bold" Foreground="White" Margin="0,0,0,6"/>
+                            <TextBlock Text="£1.82" Foreground="White" Margin="0,0,0,5"/>
+                            <TextBlock Text="18.7KW" Foreground="White"/>
+                        </StackPanel>
+
+                        <Viewbox Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Top" Width="50" Height="60">
+                            <Canvas Width="448" Height="512">
+                                <Path Fill="#FFD43B" 
+Data="M349.4 44.6c5.9-13.7 1.5-29.7-10.6-38.5s-28.6-8-39.9 1.8l-256 224c-10 8.8-13.6 22.9-8.9 35.3S50.7 288 64 288l111.5 0L98.6 467.4c-5.9 13.7-1.5 29.7 10.6 38.5s28.6 8 39.9-1.8l256-224c10-8.8 13.6-22.9 8.9-35.3s-16.6-20.7-30-20.7l-111.5 0L349.4 44.6z"/>
+                            </Canvas>
+                        </Viewbox>
+                    </Grid>
+                </Border>
             </TabItem>
         </TabControl>
-
     </Grid>
-    
 </Window>
