@@ -26,6 +26,9 @@ public class SocketServer
 public class ConnectionHandler(Socket handler)
 {
     private readonly Socket _handler = handler;
+
+    //not a bad way, violets the solid principles - doesn't invert the control
+    // dependency injection to do it properly, instead of how it is created so far
     private readonly ServerMathLogic _meterCalculations = new();
 
     public void HandleConnection()

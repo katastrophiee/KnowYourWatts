@@ -7,8 +7,11 @@ public sealed class ServerMathLogic
 {
     // Dictionary containing various tariff types and their rates per KWh
     // Will want to move to 'db' eventually
+
+    //change all doubles to decimal - avoids rounding errors
     private readonly Dictionary<string, double> tariffs = new()
     {
+        //change to enum number on the left instead of string
         { "Fixed", 24.50 },
         { "Flex", 26.20 },
         { "Green", 27.05 },
