@@ -74,7 +74,7 @@ public class ConnectionHandler(Socket handler)
         {
             if (request is not null)
             {
-                var calculatedCost = _meterCalculations.CalculateCost(request.TarrifType, request.CurrentReading);
+                var calculatedCost = _meterCalculations.CalculateCost(request.TariffType, request.CurrentReading);
 
                 return new(calculatedCost);
             }
@@ -93,7 +93,7 @@ public class ConnectionHandler(Socket handler)
         {
             if (request is not null)
             {
-                var calculatedCost = _meterCalculations.CalculateCost(request.TarrifType, request.CurrentReading);
+                var calculatedCost = _meterCalculations.CalculateCost(request.TariffType, request.CurrentReading);
 
                 return new(calculatedCost);
             }
@@ -112,7 +112,7 @@ public class ConnectionHandler(Socket handler)
         {
             if (request is not null)
             {
-                var calculatedCost = _meterCalculations.CalculateCost(request.TarrifType, request.CurrentReading);
+                var calculatedCost = _meterCalculations.CalculateCost(request.TariffType, request.CurrentReading);
 
                 return new(calculatedCost);
             }

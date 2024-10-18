@@ -15,7 +15,7 @@ public sealed class ServerMathLogic
         { "OffPeak", 23.64 }
     };
 
-    public SmartMeterCalculationResponse CalculateCost(TarrifType tariffType, double energyUsage)
+    public SmartMeterCalculationResponse CalculateCost(TariffType tariffType, double energyUsage)
     {
         if (energyUsage < 0)
             throw new ArgumentOutOfRangeException(nameof(energyUsage), "Energy usage cannot be negative.");

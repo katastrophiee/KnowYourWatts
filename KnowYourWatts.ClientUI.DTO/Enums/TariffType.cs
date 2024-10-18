@@ -2,7 +2,7 @@
 
 namespace KnowYourWatts.DTO.Enums;
 
-public enum TarrifType
+public enum TariffType
 {
     [Display(Name = "Fixed")]
     Fixed = 0,

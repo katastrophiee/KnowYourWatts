@@ -61,7 +61,7 @@
                TextAlignment="Center"/>
 
         <!-- Tab Control -->
-        <TabControl Grid.Row="1" 
+        <TabControl x:Name="TabControl" Grid.Row="1" 
                 Background="{StaticResource CommonBackground}"  
                 Margin="5"  
                 BorderBrush="{StaticResource CommonBackground}">
@@ -70,7 +70,7 @@
                 <Style TargetType="TabItem" BasedOn="{StaticResource TabItemStyle}" />
             </TabControl.Resources>
 
-            <TabItem Header="Current Usages" Foreground="{StaticResource TabForeground}" Width="190">
+            <TabItem x:Name="CurrentUsageTab" Header="Current Usages" Foreground="{StaticResource TabForeground}" Width="190">
                 <Border Background="{StaticResource CommonBackground}" Margin="10">
                     <Grid >
                         <Grid.ColumnDefinitions>
@@ -94,7 +94,7 @@ Data="M349.4 44.6c5.9-13.7 1.5-29.7-10.6-38.5s-28.6-8-39.9 1.8l-256 224c-10 8.8-
                 </Border>
             </TabItem>
 
-            <TabItem Header="Today's Usage" Foreground="{StaticResource TabForeground}" Width="190" Padding="10">
+            <TabItem x:Name="TodaysUsageTab" Header="Today's Usage" Foreground="{StaticResource TabForeground}" Width="190" Padding="10">
                 <Border Background="{StaticResource CommonBackground}" Margin="10" CornerRadius="10">
                     <Grid >
                         <Grid.ColumnDefinitions>
@@ -118,7 +118,7 @@ Data="M349.4 44.6c5.9-13.7 1.5-29.7-10.6-38.5s-28.6-8-39.9 1.8l-256 224c-10 8.8-
                 </Border>
             </TabItem>
 
-            <TabItem Header="Week Usage" Foreground="{StaticResource TabForeground}" Width="190" Padding="10">
+            <TabItem x:Name="WeeklyUsageTab" Header="Week Usage" Foreground="{StaticResource TabForeground}" Width="190" Padding="10">
                 <Border Background="{StaticResource CommonBackground}" Margin="10" CornerRadius="10">
                     <Grid >
                         <Grid.ColumnDefinitions>

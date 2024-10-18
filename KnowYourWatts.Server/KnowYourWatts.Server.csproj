@@ -13,7 +13,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\KnowYourWatts.DTO\KnowYourWatts.DTO.csproj" />
+      <ProjectReference Include="..\KnowYourWatts.DTO\KnowYourWatts.Server.DTO.csproj" />
     </ItemGroup>
 
 </Project>
