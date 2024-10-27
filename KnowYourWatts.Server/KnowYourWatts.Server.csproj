@@ -10,6 +10,7 @@
     <ItemGroup>
       <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
       <PackageReference Include="NPOI" Version="2.7.1" />
+	   <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
     </ItemGroup>
 
     <ItemGroup>

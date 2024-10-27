@@ -1,6 +1,6 @@
 ﻿namespace KnowYourWatts.DTO.Response;
 
-public class SmartMeterCalculationResponse(double cost)
+public class SmartMeterCalculationResponse(decimal cost)
 {
-    public double Cost { get; set; } = cost;
+    public decimal Cost { get; set; } = cost;
 }

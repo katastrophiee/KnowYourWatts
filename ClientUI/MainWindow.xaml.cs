@@ -71,6 +71,5 @@ public partial class MainWindow : Window
                 requestType = RequestType.WeeklyUsage;
             }
         }
-        
     }
 }

@@ -1,9 +1,9 @@
-﻿using KnowYourWatts.DTO.Enums;
+﻿using KnowYourWatts.Server.DTO.Enums;
 
 namespace KnowYourWatts.DTO.Requests;
 
 public class DailyUsageRequest
 {
     public TariffType TariffType { get; set; }
-    public double CurrentReading { get; set; }
+    public decimal CurrentReading { get; set; }
 }
