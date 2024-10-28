@@ -1,4 +1,4 @@
-﻿using KnowYourWatts.DTO.Enums;
+﻿using KnowYourWatts.ClientUI.DTO.Enums;
 using System.Net;
 using System.Net.Sockets;
 using System.Windows;

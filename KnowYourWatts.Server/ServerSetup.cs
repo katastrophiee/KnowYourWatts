@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace KnowYourWatts.Server;
 
-public class ServerSetup
+public sealed class ServerSetup
 {
     private static Server? Server;
 
@@ -13,7 +13,7 @@ public class ServerSetup
         BuildDependencies();
         Server?.Start();
     }
-    
+
     private static void BuildDependencies()
     {
         var services = new ServiceCollection();
@@ -26,12 +26,19 @@ public class ServerSetup
         services.AddScoped<ICalculationProvider, CalculationProvider>();
 
         var serviceProvider = services.BuildServiceProvider();
-        
-        Server = new(
-            serviceProvider.GetRequiredService<IConnectionHandler>(),
-            host, 
-            ipAddress, 
-            localEndPoint
-        );
+
+        try
+        {
+            Server = new(
+                serviceProvider.GetRequiredService<IConnectionHandler>(),
+                host,
+                ipAddress,
+                localEndPoint
+            );
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred while setting up the server. {ex}");
+        }
     }
 }

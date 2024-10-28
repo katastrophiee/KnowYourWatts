@@ -1,5 +1,6 @@
-﻿using KnowYourWatts.DTO.Response;
-using KnowYourWatts.Server.DTO.Enums;
+﻿using KnowYourWatts.Server.DTO.Enums;
+using KnowYourWatts.Server.DTO.Requests;
+using KnowYourWatts.Server.DTO.Response;
 using KnowYourWatts.Server.Interfaces;
 
 namespace KnowYourWatts.Server;
@@ -10,7 +11,7 @@ public sealed class CalculationProvider : ICalculationProvider
     // Will want to move to 'db' eventually
 
     //change all decimals to decimal - avoids rounding errors
-    private readonly Dictionary<TariffType, decimal> tariffs = new()
+    private readonly Dictionary<TariffType, decimal> tariffsInPence = new()
     {
         { TariffType.Fixed, 24.50m },
         { TariffType.Flex, 26.20m },
@@ -18,15 +19,27 @@ public sealed class CalculationProvider : ICalculationProvider
         { TariffType.OffPeak, 23.64m }
     };
 
-    public SmartMeterCalculationResponse CalculateCost(TariffType tariffType, decimal energyUsage)
+    public SmartMeterCalculationResponse CalculateCost(SmartMeterCalculationRequest request)
     {
-        if (energyUsage < 0)
-            throw new ArgumentOutOfRangeException(nameof(energyUsage), "Energy usage cannot be negative.");
+        if (request.CurrentReading < request.PreviousReading)
+            return new("Current energy reading cannot be less than previous energy reading.");
 
-        if (!tariffs.TryGetValue(tariffType, out decimal tariff))
-            throw new KeyNotFoundException($"Tariff type '{tariffType}' does not exist.");
+        if (!tariffsInPence.TryGetValue(request.TariffType, out decimal pricePerUnit))
+            return new($"Tariff type '{request.TariffType}' does not exist.");
 
-        decimal cost = energyUsage * tariff;
-        return new SmartMeterCalculationResponse(cost);
+        var energyUsed = request.CurrentReading - request.PreviousReading;
+
+        decimal costOfElectricity = energyUsed * pricePerUnit;
+
+        decimal totalStandingCharge = request.ExistingCharge * request.BillingPeriod;
+
+        decimal totalBeforeVAT = costOfElectricity + totalStandingCharge;
+
+        decimal vatAmount = totalBeforeVAT * 0.05m;
+
+        decimal totalCost = totalBeforeVAT + vatAmount;
+
+        return new SmartMeterCalculationResponse(Math.Round(totalCost, 2, MidpointRounding.AwayFromZero));
     }
+
 }

@@ -4,7 +4,7 @@ using System.Net.Sockets;
 
 namespace KnowYourWatts.Server;
 
-public class Server(
+public sealed class Server(
     IConnectionHandler connectionHandler,
     IPHostEntry host,
     IPAddress ipAddress,
@@ -40,13 +40,6 @@ public class Server(
         }
     }
 }
-
-    //public void Stop()
-    //{
-    //    RunServer = false;
-    //    Listener.Close();
-    //    Console.WriteLine("Server stopped.");
-    //}
 
     // create name.database proj
     // add interfaces

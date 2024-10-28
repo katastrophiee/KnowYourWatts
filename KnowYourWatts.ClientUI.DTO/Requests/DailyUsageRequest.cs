@@ -1,6 +1,6 @@
-﻿using KnowYourWatts.DTO.Enums;
+﻿using KnowYourWatts.ClientUI.DTO.Enums;
 
-namespace KnowYourWatts.DTO.Requests;
+namespace KnowYourWatts.ClientUI.DTO.Requests;
 
 public class DailyUsageRequest
 {

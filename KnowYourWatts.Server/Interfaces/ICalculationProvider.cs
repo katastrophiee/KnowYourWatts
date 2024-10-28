@@ -1,9 +1,9 @@
-﻿using KnowYourWatts.DTO.Response;
-using KnowYourWatts.Server.DTO.Enums;
+﻿using KnowYourWatts.Server.DTO.Requests;
+using KnowYourWatts.Server.DTO.Response;
 
 namespace KnowYourWatts.Server.Interfaces;
 
 public interface ICalculationProvider
 {
-    SmartMeterCalculationResponse CalculateCost(TariffType tariffType, decimal energyUsage);
+    SmartMeterCalculationResponse CalculateCost(SmartMeterCalculationRequest request);
 }

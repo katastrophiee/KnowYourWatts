@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace KnowYourWatts.DTO.Enums;
+namespace KnowYourWatts.ClientUI.DTO.Enums;
 
 public enum TariffType
 {

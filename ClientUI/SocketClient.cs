@@ -1,9 +1,9 @@
-﻿using KnowYourWatts.DTO.Enums;
-using KnowYourWatts.DTO.Requests;
+﻿using KnowYourWatts.ClientUI.DTO.Enums;
 using Newtonsoft.Json;
 using System.Net.Sockets;
 using System.Windows;
 using System.Text;
+using KnowYourWatts.ClientUI.DTO.Requests;
 
 namespace ClientUI;
 
