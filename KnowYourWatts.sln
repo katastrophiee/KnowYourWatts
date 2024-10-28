@@ -10,13 +10,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KnowYourWatts.Server", "Kno
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KnowYourWatts.Server.DTO", "KnowYourWatts.DTO\KnowYourWatts.Server.DTO.csproj", "{8059EF81-DEBF-423F-9FA0-5B0C3ECD02FE}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KnowYourWatts.ClientUI", "ClientUI\KnowYourWatts.ClientUI.csproj", "{420C062E-B326-4E7D-A038-818E1273D9A6}"
-	ProjectSection(ProjectDependencies) = postProject
-		{AFDBC6D2-502E-4509-AB12-26A622ECB68C} = {AFDBC6D2-502E-4509-AB12-26A622ECB68C}
-	EndProjectSection
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KnowYourWatts.ClientUI.DTO", "KnowYourWatts.ClientUI.DTO\KnowYourWatts.ClientUI.DTO.csproj", "{AFDBC6D2-502E-4509-AB12-26A622ECB68C}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KnowYourWatts.Tests", "KnowYourWatts.Tests\KnowYourWatts.Tests.csproj", "{77B655DC-1D64-44DA-9CBC-5AFE5CF7358E}"
 EndProject
 Global
@@ -33,14 +26,6 @@ Global
 		{8059EF81-DEBF-423F-9FA0-5B0C3ECD02FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8059EF81-DEBF-423F-9FA0-5B0C3ECD02FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8059EF81-DEBF-423F-9FA0-5B0C3ECD02FE}.Release|Any CPU.Build.0 = Release|Any CPU
-		{420C062E-B326-4E7D-A038-818E1273D9A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{420C062E-B326-4E7D-A038-818E1273D9A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{420C062E-B326-4E7D-A038-818E1273D9A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{420C062E-B326-4E7D-A038-818E1273D9A6}.Release|Any CPU.Build.0 = Release|Any CPU
-		{AFDBC6D2-502E-4509-AB12-26A622ECB68C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{AFDBC6D2-502E-4509-AB12-26A622ECB68C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{AFDBC6D2-502E-4509-AB12-26A622ECB68C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{AFDBC6D2-502E-4509-AB12-26A622ECB68C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{77B655DC-1D64-44DA-9CBC-5AFE5CF7358E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{77B655DC-1D64-44DA-9CBC-5AFE5CF7358E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{77B655DC-1D64-44DA-9CBC-5AFE5CF7358E}.Release|Any CPU.ActiveCfg = Release|Any CPU
