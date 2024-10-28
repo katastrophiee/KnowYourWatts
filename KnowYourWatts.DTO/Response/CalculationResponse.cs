@@ -1,4 +1,6 @@
-﻿namespace KnowYourWatts.DTO.Response;
+﻿using KnowYourWatts.Server.DTO.Response;
+
+namespace KnowYourWatts.Server.DTO.Response;
 
 public class CalculationResponse
 {

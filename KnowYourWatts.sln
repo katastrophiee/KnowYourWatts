@@ -3,18 +3,21 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.10.35027.167
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KnowYourWatts.Tests", "KnowYourWatts.Tests\KnowYourWatts.Tests.csproj", "{FAA5B35A-8997-4D30-BEB0-1F618BFC5316}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KnowYourWatts.Server", "KnowYourWatts.Server\KnowYourWatts.Server.csproj", "{7C5BE3DB-BF4A-4546-AA4B-D683E0F5E7ED}"
 	ProjectSection(ProjectDependencies) = postProject
 		{8059EF81-DEBF-423F-9FA0-5B0C3ECD02FE} = {8059EF81-DEBF-423F-9FA0-5B0C3ECD02FE}
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "KnowYourWatts", "KnowYourWatts", "{A82BCEBA-9E06-457E-ACDB-F95140C3ED2C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KnowYourWatts.Server.DTO", "KnowYourWatts.DTO\KnowYourWatts.Server.DTO.csproj", "{8059EF81-DEBF-423F-9FA0-5B0C3ECD02FE}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KnowYourWatts.DTO", "KnowYourWatts.DTO\KnowYourWatts.DTO.csproj", "{8059EF81-DEBF-423F-9FA0-5B0C3ECD02FE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KnowYourWatts.ClientUI", "ClientUI\KnowYourWatts.ClientUI.csproj", "{420C062E-B326-4E7D-A038-818E1273D9A6}"
+	ProjectSection(ProjectDependencies) = postProject
+		{AFDBC6D2-502E-4509-AB12-26A622ECB68C} = {AFDBC6D2-502E-4509-AB12-26A622ECB68C}
+	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClientUI", "ClientUI\ClientUI.csproj", "{420C062E-B326-4E7D-A038-818E1273D9A6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KnowYourWatts.ClientUI.DTO", "KnowYourWatts.ClientUI.DTO\KnowYourWatts.ClientUI.DTO.csproj", "{AFDBC6D2-502E-4509-AB12-26A622ECB68C}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KnowYourWatts.Tests", "KnowYourWatts.Tests\KnowYourWatts.Tests.csproj", "{77B655DC-1D64-44DA-9CBC-5AFE5CF7358E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -22,10 +25,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{FAA5B35A-8997-4D30-BEB0-1F618BFC5316}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FAA5B35A-8997-4D30-BEB0-1F618BFC5316}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FAA5B35A-8997-4D30-BEB0-1F618BFC5316}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FAA5B35A-8997-4D30-BEB0-1F618BFC5316}.Release|Any CPU.Build.0 = Release|Any CPU
 		{7C5BE3DB-BF4A-4546-AA4B-D683E0F5E7ED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7C5BE3DB-BF4A-4546-AA4B-D683E0F5E7ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7C5BE3DB-BF4A-4546-AA4B-D683E0F5E7ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -38,6 +37,14 @@ Global
 		{420C062E-B326-4E7D-A038-818E1273D9A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{420C062E-B326-4E7D-A038-818E1273D9A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{420C062E-B326-4E7D-A038-818E1273D9A6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AFDBC6D2-502E-4509-AB12-26A622ECB68C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AFDBC6D2-502E-4509-AB12-26A622ECB68C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AFDBC6D2-502E-4509-AB12-26A622ECB68C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AFDBC6D2-502E-4509-AB12-26A622ECB68C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{77B655DC-1D64-44DA-9CBC-5AFE5CF7358E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{77B655DC-1D64-44DA-9CBC-5AFE5CF7358E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{77B655DC-1D64-44DA-9CBC-5AFE5CF7358E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{77B655DC-1D64-44DA-9CBC-5AFE5CF7358E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -10,10 +10,11 @@
     <ItemGroup>
       <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
       <PackageReference Include="NPOI" Version="2.7.1" />
+	   <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\KnowYourWatts.DTO\KnowYourWatts.DTO.csproj" />
+      <ProjectReference Include="..\KnowYourWatts.DTO\KnowYourWatts.Server.DTO.csproj" />
     </ItemGroup>
 
 </Project>

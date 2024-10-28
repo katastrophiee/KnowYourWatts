@@ -1,6 +1,6 @@
-﻿using KnowYourWatts.Server.DTO.Enums;
+﻿using KnowYourWatts.ClientUI.DTO.Enums;
 
-namespace KnowYourWatts.Server.DTO.Requests;
+namespace KnowYourWatts.ClientUI.DTO.Requests;
 
 public sealed class CurrentUsageRequest
 {
