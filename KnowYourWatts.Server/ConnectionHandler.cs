@@ -5,16 +5,13 @@ using System.Text;
 using KnowYourWatts.Server.DTO.Requests;
 using KnowYourWatts.Server.DTO.Enums;
 using KnowYourWatts.Server.DTO.Response;
-using KnowYourWatts.MockDb.Interfaces;
-using KnowYourWatts.MockDb.Repository;
 
 namespace KnowYourWatts.Server;
 
-public sealed class ConnectionHandler(ICalculationProvider calculationProvider, IPreviousReadingRepository previousReadingRepository) : IConnectionHandler
+public sealed class ConnectionHandler(ICalculationProvider calculationProvider) : IConnectionHandler
 {
     //We use dependency injection to ensure we follow the SOLID principles
     private readonly ICalculationProvider _calculationProvider = calculationProvider;
-    private readonly IPreviousReadingRepository _previousReadingRepository = previousReadingRepository;
 
     public void HandleConnection(Socket handler)
     {
@@ -31,6 +28,7 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider, 
             byte[] buffer = new byte[1024];
             int bytesReceived = handler.Receive(buffer);
 
+            //Check we received some data from the client
             if (bytesReceived == 0)
             {
                 var response = Encoding.ASCII.GetBytes(SerializeErrorResponse("The request was received but it contained no data."));
@@ -38,10 +36,10 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider, 
                 return;
             }
 
-            string receivedData = Encoding.ASCII.GetString(buffer, 0, bytesReceived);
+            //Convert the data to a string so we can use it as JSON
+            var receivedData = Encoding.ASCII.GetString(buffer, 0, bytesReceived);
 
-            Console.WriteLine("Data received " + receivedData);
-
+            //Convert the JSON to an object so we can use it for our request
             var request = JsonConvert.DeserializeObject<ServerRequest>(receivedData);
 
             if (request is null)
@@ -58,6 +56,7 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider, 
                 return;
             }
 
+            //Based on our request type, we want to convert the string of JSON in the data property to the correct object
             var calculationResponse = request.RequestType switch
             {
                 RequestType.CurrentUsage => CalculateCurrentUsage(request.Mpan, JsonConvert.DeserializeObject<CurrentUsageRequest>(request.Data)),
@@ -66,6 +65,7 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider, 
                 _ => new($"The request type {request.RequestType} was not recognized.")
             };
 
+            //We put the response object into JSON and send it back to the client
             handler.Send(Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(calculationResponse)));
         }
         catch (SocketException ex)
@@ -87,102 +87,39 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider, 
         }
     }
 
-    private static string SerializeErrorResponse(string errorMessage)
-    {
-        var response = new CalculationResponse(errorMessage);
+    private static string SerializeErrorResponse(string errorMessage) => JsonConvert.SerializeObject(new CalculationResponse(errorMessage));
 
-        return JsonConvert.SerializeObject(response);
-    }
-
-    private CalculationResponse CalculateCurrentUsage(string mpan, CurrentUsageRequest? request)
+    private CalculationResponse CalculateUsage<T>(string mpan, T? request) where T : IUsageRequest
     {
         try
         {
-            if (request is not null)
+            // Check the request data is not null in case the deserialization failed
+            if (request is null)
+                return new("The request data was empty.");
+
+            var calculateCostRequest = new SmartMeterCalculationRequest
             {
-                var previousReading = _previousReadingRepository.GetPreviousReadingByMpan(mpan);
+                Mpan = mpan,
+                TariffType = request.TariffType,
+                CurrentReading = request.CurrentReading,
+                BillingPeriod = request.BillingPeriod,
+                StandingCharge = request.StandingCharge
+            };
 
-                var calculateCostRequest = new SmartMeterCalculationRequest
-                {
-                    TariffType = request.TariffType,
-                    CurrentReading = request.CurrentReading,
-                    PreviousReading = previousReading?.PreviousUsage ?? 0m,
-                    BillingPeriod = 1,
-                    StandingCharge = 1
-                };
+            //Calculate the cost of the electricity used
+            var calculatedCost = _calculationProvider.CalculateCost(calculateCostRequest);
 
-                //need to get the previous reading and existing charge from MockDb
-                //billing period is 1 as it is the current usage
-                var calculatedCost = _calculationProvider.CalculateCost(calculateCostRequest);
-
-                return new(calculatedCost);
-            }
-
-            return new("The request data was empty.");
+            return new(calculatedCost);
         }
         catch (Exception ex)
         {
-            return new("An unknown error occured when trying to calculate the current cost: " + ex.Message);
+            return new($"An unknown error occurred when trying to calculate the cost: {ex.Message}");
         }
     }
 
-    private CalculationResponse CalculateDailyUsage(string mpan, DailyUsageRequest? request)
-    {
-        try
-        {
-            if (request is not null)
-            {
-                var previousReading = _previousReadingRepository.GetPreviousReadingByMpan(mpan);
+    private CalculationResponse CalculateCurrentUsage(string mpan, CurrentUsageRequest? request) => CalculateUsage(mpan, request);
 
-                var calculateCostRequest = new SmartMeterCalculationRequest
-                {
-                    TariffType = request.TariffType,
-                    CurrentReading = request.CurrentReading,
-                    PreviousReading = previousReading?.PreviousUsage ?? 0m,
-                    BillingPeriod = 1,
-                    StandingCharge = 1
-                };
+    private CalculationResponse CalculateDailyUsage(string mpan, DailyUsageRequest? request) => CalculateUsage(mpan, request);
 
-                var calculatedCost = _calculationProvider.CalculateCost(calculateCostRequest);
-
-                return new(calculatedCost);
-            }
-
-            return new("The request data was empty.");
-        }
-        catch (Exception ex)
-        {
-            return new("An unknown error occured when trying to calculate the daily cost: " + ex.Message);
-        }
-    }
-
-    private CalculationResponse CalculateWeeklyUsage(string mpan, WeeklyUsageRequest? request)
-    {
-        try
-        {
-            var previousReading = _previousReadingRepository.GetPreviousReadingByMpan(mpan);
-
-            if (request is not null)
-            {
-                var calculateCostRequest = new SmartMeterCalculationRequest
-                {
-                    TariffType = request.TariffType,
-                    CurrentReading = request.CurrentReading,
-                    PreviousReading = previousReading?.PreviousUsage ?? 0m,
-                    BillingPeriod = 7,
-                    StandingCharge = 1
-                };
-
-                var calculatedCost = _calculationProvider.CalculateCost(calculateCostRequest);
-
-                return new(calculatedCost);
-            }
-
-            return new("The request data was empty.");
-        }
-        catch (Exception ex)
-        {
-            return new("An unknown error occured when trying to calculate the weekly cost: " + ex.Message);
-        }
-    }
+    private CalculationResponse CalculateWeeklyUsage(string mpan, WeeklyUsageRequest? request) => CalculateUsage(mpan, request);
 }

@@ -4,12 +4,23 @@ using KnowYourWatts.Server.DTO.Models;
 
 namespace KnowYourWatts.MockDb.Repository;
 
-public class TariffRepository(MockDatabase mockDbContext) : ITariffRepository
+public class TariffRepository : ITariffRepository
 {
-    private readonly MockDatabase _mockDbContext = mockDbContext;
+    public List<TariffTypeAndPrice> TariffTypesAndPrices { get; set; }
 
-    public TariffTypeAndPrice? GetTariffByType(TariffType tariffType)
+    public TariffRepository()
     {
-        return _mockDbContext.TarrifType.FirstOrDefault(t => t.TariffType == tariffType);
+        TariffTypesAndPrices =
+        [
+            new() { TariffType = TariffType.Fixed, PriceInPence = 24.50m },
+            new() { TariffType = TariffType.Flex, PriceInPence = 26.20m },
+            new() { TariffType = TariffType.Green, PriceInPence = 27.05m },
+            new() { TariffType = TariffType.OffPeak, PriceInPence = 23.64m }
+        ];
+    }
+
+    public TariffTypeAndPrice? GetTariffPriceByType(TariffType tariffType)
+    {
+        return TariffTypesAndPrices.FirstOrDefault(t => t.TariffType == tariffType);
     }
 }

@@ -2,15 +2,13 @@
 
 namespace KnowYourWatts.Server.DTO.Requests;
 
-public class SmartMeterCalculationRequest
+public interface IUsageRequest
 {
-    public string Mpan { get; set; }
-
     public TariffType TariffType { get; set; }
 
     public decimal CurrentReading { get; set; }
 
-    public int BillingPeriod { get; set; }
-
     public decimal StandingCharge { get; set; }
-}
+
+    public int BillingPeriod { get; set; }
+}   

@@ -5,5 +5,5 @@ namespace KnowYourWatts.MockDb.Interfaces;
 
 public interface ITariffRepository
 {
-    TariffTypeAndPrice? GetTariffByType(TariffType tariffType);
+    TariffTypeAndPrice? GetTariffPriceByType(TariffType tariffType);
 }

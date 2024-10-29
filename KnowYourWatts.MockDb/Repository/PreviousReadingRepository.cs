@@ -3,13 +3,24 @@ using KnowYourWatts.Server.DTO.Models;
 
 namespace KnowYourWatts.MockDb.Repository;
 
-public sealed class PreviousReadingRepository(MockDatabase mockDbContext) : IPreviousReadingRepository
+public sealed class PreviousReadingRepository : IPreviousReadingRepository
 {
-    private readonly MockDatabase _mockDbContext = mockDbContext;
+    public List<PreviousReading> ClientPreviousReadings { get; set; }
 
-    public PreviousReading? GetPreviousReadingByMpan(string mpan)
+    public PreviousReadingRepository()
     {
-        var test = _mockDbContext.PreviousReadings.Where(r => !string.IsNullOrEmpty(r.Mpan));
-        return _mockDbContext.PreviousReadings.FirstOrDefault(r => r.Mpan == mpan);
+        ClientPreviousReadings = [];
+    }
+
+    public decimal? GetPreviousReadingByMpan(string mpan) => ClientPreviousReadings.FirstOrDefault(r => r.Mpan == mpan)?.PreviousUsage ?? 0;
+
+    public void AddOrUpdatePreviousReading(string mpan, decimal currentUsage)
+    {
+        var existingReading = ClientPreviousReadings.FirstOrDefault(r => r.Mpan == mpan);
+
+        if (existingReading is not null)
+            ClientPreviousReadings.Remove(existingReading);
+
+        ClientPreviousReadings.Add(new PreviousReading { Mpan = mpan, PreviousUsage = currentUsage });
     }
 }

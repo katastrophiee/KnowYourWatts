@@ -4,5 +4,7 @@ namespace KnowYourWatts.MockDb.Interfaces;
 
 public interface IPreviousReadingRepository
 {
-    PreviousReading? GetPreviousReadingByMpan(string mpan);
+    decimal? GetPreviousReadingByMpan(string mpan);
+
+    void AddOrUpdatePreviousReading(string mpan, decimal currentUsage);
 }
