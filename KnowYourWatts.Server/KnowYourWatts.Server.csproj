@@ -15,6 +15,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\KnowYourWatts.DTO\KnowYourWatts.Server.DTO.csproj" />
+      <ProjectReference Include="..\KnowYourWatts.MockDb\KnowYourWatts.MockDb.csproj" />
     </ItemGroup>
 
 </Project>

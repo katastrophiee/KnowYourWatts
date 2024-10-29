@@ -1,18 +1,24 @@
-﻿using KnowYourWatts.Server;
+﻿using KnowYourWatts.MockDb.Interfaces;
+using KnowYourWatts.Server;
 using KnowYourWatts.Server.DTO.Enums;
+using KnowYourWatts.Server.DTO.Models;
 using KnowYourWatts.Server.DTO.Requests;
+using NSubstitute;
 
 namespace KnowYourWatts.Tests;
 
 internal sealed class CalculateCostTests
 {
+    private ITariffRepository _tariffRepository = null!;
     private CalculationProvider _calculationProvider = null!;
     private SmartMeterCalculationRequest _request = null!;
 
     [SetUp]
     public void Setup()
     {
-        _calculationProvider = new();
+        _tariffRepository = Substitute.For<ITariffRepository>();
+
+        _calculationProvider = new(_tariffRepository);
 
         _request = new()
         {
@@ -20,8 +26,13 @@ internal sealed class CalculateCostTests
             CurrentReading = 2,
             PreviousReading = 1,
             BillingPeriod = 1,
-            ExistingCharge = 1
+            StandingCharge = 1
         };
+
+        _tariffRepository.GetTariffByType(Arg.Is<TariffType>(t => t == TariffType.Fixed)).Returns(new TariffTypeAndPrice { PriceInPence = 24.50m });
+        _tariffRepository.GetTariffByType(Arg.Is<TariffType>(t => t == TariffType.Flex)).Returns(new TariffTypeAndPrice { PriceInPence = 26.20m });
+        _tariffRepository.GetTariffByType(Arg.Is<TariffType>(t => t == TariffType.Green)).Returns(new TariffTypeAndPrice { PriceInPence = 27.05m });
+        _tariffRepository.GetTariffByType(Arg.Is<TariffType>(t => t == TariffType.OffPeak)).Returns(new TariffTypeAndPrice { PriceInPence = 23.64m });
     }
 
     /// <summary>
@@ -44,7 +55,7 @@ internal sealed class CalculateCostTests
         _request.PreviousReading = previousReading;
         _request.CurrentReading = currentReading;
         _request.BillingPeriod = billingPeriod;
-        _request.ExistingCharge = existingCharge;
+        _request.StandingCharge = existingCharge;
 
         //Act
         var result = _calculationProvider.CalculateCost(_request);
@@ -74,7 +85,7 @@ internal sealed class CalculateCostTests
         _request.PreviousReading = previousReading;
         _request.CurrentReading = currentReading;
         _request.BillingPeriod = billingPeriod;
-        _request.ExistingCharge = existingCharge;
+        _request.StandingCharge = existingCharge;
 
         //Act
         var result = _calculationProvider.CalculateCost(_request);
@@ -105,7 +116,7 @@ internal sealed class CalculateCostTests
         _request.PreviousReading = previousReading;
         _request.CurrentReading = currentReading;
         _request.BillingPeriod = billingPeriod;
-        _request.ExistingCharge = existingCharge;
+        _request.StandingCharge = existingCharge;
 
         //Act
         var result = _calculationProvider.CalculateCost(_request);
@@ -136,7 +147,7 @@ internal sealed class CalculateCostTests
         _request.PreviousReading = previousReading;
         _request.CurrentReading = currentReading;
         _request.BillingPeriod = billingPeriod;
-        _request.ExistingCharge = existingCharge;
+        _request.StandingCharge = existingCharge;
 
         //Act
         var result = _calculationProvider.CalculateCost(_request);
@@ -173,7 +184,7 @@ internal sealed class CalculateCostTests
     [Test]
     public void ErrorWhenTariffTypePriceNotFound() {
         //Arrange
-        _request.TariffType = (TariffType)56;
+        _tariffRepository.GetTariffByType(Arg.Any<TariffType>()).Returns(null as TariffTypeAndPrice);
 
         //Act
         var result = _calculationProvider.CalculateCost(_request);

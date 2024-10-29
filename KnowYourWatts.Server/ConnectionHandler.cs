@@ -5,13 +5,16 @@ using System.Text;
 using KnowYourWatts.Server.DTO.Requests;
 using KnowYourWatts.Server.DTO.Enums;
 using KnowYourWatts.Server.DTO.Response;
+using KnowYourWatts.MockDb.Interfaces;
+using KnowYourWatts.MockDb.Repository;
 
 namespace KnowYourWatts.Server;
 
-public sealed class ConnectionHandler(ICalculationProvider calculationProvider) : IConnectionHandler
+public sealed class ConnectionHandler(ICalculationProvider calculationProvider, IPreviousReadingRepository previousReadingRepository) : IConnectionHandler
 {
     //We use dependency injection to ensure we follow the SOLID principles
     private readonly ICalculationProvider _calculationProvider = calculationProvider;
+    private readonly IPreviousReadingRepository _previousReadingRepository = previousReadingRepository;
 
     public void HandleConnection(Socket handler)
     {
@@ -48,19 +51,18 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider) 
                 return;
             }
 
-            // Add back in once MPAN is added properly
-            //if (string.IsNullOrEmpty(request.Mpan))
-            //{
-            //    var response = Encoding.ASCII.GetBytes(SerializeErrorResponse("No MPAN was provided with the request."));
-            //    handler.Send(response);
-            //    return;
-            //}
+            if (string.IsNullOrEmpty(request.Mpan))
+            {
+                var response = Encoding.ASCII.GetBytes(SerializeErrorResponse("No MPAN was provided with the request."));
+                handler.Send(response);
+                return;
+            }
 
             var calculationResponse = request.RequestType switch
             {
-                RequestType.CurrentUsage => CalculateCurrentUsage(JsonConvert.DeserializeObject<CurrentUsageRequest>(request.Data)),
-                RequestType.TodaysUsage => CalculateDailyUsage(JsonConvert.DeserializeObject<DailyUsageRequest>(request.Data)),
-                RequestType.WeeklyUsage => CalculateWeeklyUsage(JsonConvert.DeserializeObject<WeeklyUsageRequest>(request.Data)),
+                RequestType.CurrentUsage => CalculateCurrentUsage(request.Mpan, JsonConvert.DeserializeObject<CurrentUsageRequest>(request.Data)),
+                RequestType.TodaysUsage => CalculateDailyUsage(request.Mpan, JsonConvert.DeserializeObject<DailyUsageRequest>(request.Data)),
+                RequestType.WeeklyUsage => CalculateWeeklyUsage(request.Mpan, JsonConvert.DeserializeObject<WeeklyUsageRequest>(request.Data)),
                 _ => new($"The request type {request.RequestType} was not recognized.")
             };
 
@@ -92,19 +94,21 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider) 
         return JsonConvert.SerializeObject(response);
     }
 
-    private CalculationResponse CalculateCurrentUsage(CurrentUsageRequest? request)
+    private CalculationResponse CalculateCurrentUsage(string mpan, CurrentUsageRequest? request)
     {
         try
         {
             if (request is not null)
             {
+                var previousReading = _previousReadingRepository.GetPreviousReadingByMpan(mpan);
+
                 var calculateCostRequest = new SmartMeterCalculationRequest
                 {
                     TariffType = request.TariffType,
                     CurrentReading = request.CurrentReading,
-                    PreviousReading = 1,
+                    PreviousReading = previousReading?.PreviousUsage ?? 0m,
                     BillingPeriod = 1,
-                    ExistingCharge = 1
+                    StandingCharge = 1
                 };
 
                 //need to get the previous reading and existing charge from MockDb
@@ -122,19 +126,21 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider) 
         }
     }
 
-    private CalculationResponse CalculateDailyUsage(DailyUsageRequest? request)
+    private CalculationResponse CalculateDailyUsage(string mpan, DailyUsageRequest? request)
     {
         try
         {
             if (request is not null)
             {
+                var previousReading = _previousReadingRepository.GetPreviousReadingByMpan(mpan);
+
                 var calculateCostRequest = new SmartMeterCalculationRequest
                 {
                     TariffType = request.TariffType,
                     CurrentReading = request.CurrentReading,
-                    PreviousReading = 1,
+                    PreviousReading = previousReading?.PreviousUsage ?? 0m,
                     BillingPeriod = 1,
-                    ExistingCharge = 1
+                    StandingCharge = 1
                 };
 
                 var calculatedCost = _calculationProvider.CalculateCost(calculateCostRequest);
@@ -150,19 +156,21 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider) 
         }
     }
 
-    private CalculationResponse CalculateWeeklyUsage(WeeklyUsageRequest? request)
+    private CalculationResponse CalculateWeeklyUsage(string mpan, WeeklyUsageRequest? request)
     {
         try
         {
+            var previousReading = _previousReadingRepository.GetPreviousReadingByMpan(mpan);
+
             if (request is not null)
             {
                 var calculateCostRequest = new SmartMeterCalculationRequest
                 {
                     TariffType = request.TariffType,
                     CurrentReading = request.CurrentReading,
-                    PreviousReading = 1,
+                    PreviousReading = previousReading?.PreviousUsage ?? 0m,
                     BillingPeriod = 7,
-                    ExistingCharge = 1
+                    StandingCharge = 1
                 };
 
                 var calculatedCost = _calculationProvider.CalculateCost(calculateCostRequest);

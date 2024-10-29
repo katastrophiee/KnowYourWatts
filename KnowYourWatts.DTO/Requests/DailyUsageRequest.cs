@@ -6,4 +6,10 @@ public class DailyUsageRequest
 {
     public TariffType TariffType { get; set; }
     public decimal CurrentReading { get; set; }
+
+    public decimal PreviousReading { get; set; }
+
+    public int BillingPeriod { get; set; }
+
+    public decimal ExistingCharge { get; set; }
 }
