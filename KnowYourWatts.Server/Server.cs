@@ -18,6 +18,8 @@ public sealed class Server(
 
     public void Start()
     {
+        // Calls key generator when server starts
+        KeyHandler.GenerateKeys(); 
         try
         {
             var listener = new Socket(IpAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);

@@ -5,6 +5,7 @@ using System.Text;
 using KnowYourWatts.Server.DTO.Requests;
 using KnowYourWatts.Server.DTO.Enums;
 using KnowYourWatts.Server.DTO.Response;
+using System.Reflection.Metadata;
 
 namespace KnowYourWatts.Server;
 
@@ -17,6 +18,29 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider) 
     {
         try
         {
+            byte[] buffer = new byte[1024];
+
+            // ADD VALID ERROR HANDLING, TRY CATCH, VERIFICATION DEPENDING ON DECRYPTION - HOW WILL THE SERVER VERIFY THE CLIENT BASED ON THE
+            // MPAN RECEIVED?
+
+            // Send the public key to the client
+            string publicKey = KeyHandler.GetPublicKey();
+            byte[] publicKeyBytes = Encoding.UTF8.GetBytes(publicKey);
+            handler.Send(publicKeyBytes, SocketFlags.None);
+            // Console writeline for debugging
+            Console.WriteLine("Server: Public key sent to client.");
+
+            // NEED TO ADD CODE TO SEND THE MPAN FROM THE CLIENT TO SERVER
+            // Receive the encrypted MPAN from client
+            int bytesRead = handler.Receive(buffer, SocketFlags.None);
+            byte[] encryptedMpan = new byte[bytesRead];
+            Array.Copy(buffer, encryptedMpan, bytesRead);
+
+            // Decrypt the MPAN
+            string decryptedMpan = KeyHandler.DecryptMPAN(encryptedMpan);
+            // Console writeline for debugging
+            Console.WriteLine($"Server: Decrypted MPAN received: {decryptedMpan}");
+
             //Ensure we are connected to the client and can respond to them
             if (!handler.Connected || handler.RemoteEndPoint is null)
             {
@@ -25,7 +49,6 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider) 
                 return;
             }
 
-            byte[] buffer = new byte[1024];
             int bytesReceived = handler.Receive(buffer);
 
             //Check we received some data from the client
