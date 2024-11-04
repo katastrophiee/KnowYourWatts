@@ -12,6 +12,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KnowYourWatts.Server.DTO", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KnowYourWatts.Tests", "KnowYourWatts.Tests\KnowYourWatts.Tests.csproj", "{77B655DC-1D64-44DA-9CBC-5AFE5CF7358E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KnowYourWatts.MockDb", "KnowYourWatts.MockDb\KnowYourWatts.MockDb.csproj", "{762DD516-7308-4ACF-AF65-296F85F3DC91}"
+	ProjectSection(ProjectDependencies) = postProject
+		{8059EF81-DEBF-423F-9FA0-5B0C3ECD02FE} = {8059EF81-DEBF-423F-9FA0-5B0C3ECD02FE}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,6 +35,10 @@ Global
 		{77B655DC-1D64-44DA-9CBC-5AFE5CF7358E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{77B655DC-1D64-44DA-9CBC-5AFE5CF7358E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{77B655DC-1D64-44DA-9CBC-5AFE5CF7358E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{762DD516-7308-4ACF-AF65-296F85F3DC91}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{762DD516-7308-4ACF-AF65-296F85F3DC91}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{762DD516-7308-4ACF-AF65-296F85F3DC91}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{762DD516-7308-4ACF-AF65-296F85F3DC91}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

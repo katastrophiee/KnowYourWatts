@@ -1,6 +1,8 @@
 ﻿using KnowYourWatts.Server.Interfaces;
 using System.Net;
 using Microsoft.Extensions.DependencyInjection;
+using KnowYourWatts.MockDb.Interfaces;
+using KnowYourWatts.MockDb.Repository;
 
 namespace KnowYourWatts.Server;
 
@@ -24,6 +26,9 @@ public sealed class ServerSetup
 
         services.AddScoped<IConnectionHandler, ConnectionHandler>();
         services.AddScoped<ICalculationProvider, CalculationProvider>();
+        services.AddScoped<IPreviousReadingRepository, PreviousReadingRepository>();
+        services.AddScoped<ITariffRepository, TariffRepository>();
+        services.AddScoped<ICostRepository, CostRepository>();
 
         var serviceProvider = services.BuildServiceProvider();
 
