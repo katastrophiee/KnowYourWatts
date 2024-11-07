@@ -6,24 +6,22 @@ namespace KnowYourWatts.Server;
 
 public sealed class Server(
     IConnectionHandler connectionHandler,
-    IPHostEntry host,
     IPAddress ipAddress,
     IPEndPoint localEndPoint)
 {
     private readonly IConnectionHandler _connectionHandler = connectionHandler;
-    private readonly IPHostEntry Host = host;
-    private readonly IPAddress IpAddress = ipAddress;
-    private readonly IPEndPoint LocalEndPoint = localEndPoint;
+    private readonly IPAddress _ipAddress = ipAddress;
+    private readonly IPEndPoint _localEndPoint = localEndPoint;
     private readonly bool RunServer = true;
 
     public void Start()
     {
         try
         {
-            var listener = new Socket(IpAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            listener.Bind(LocalEndPoint);
+            var listener = new Socket(_ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            listener.Bind(_localEndPoint);
             listener.Listen(30);
-            Console.WriteLine($"Server started at {LocalEndPoint.Address}:{LocalEndPoint.Port}");
+            Console.WriteLine($"Server started at {_localEndPoint.Address}:{_localEndPoint.Port}");
 
             while (RunServer)
             {
