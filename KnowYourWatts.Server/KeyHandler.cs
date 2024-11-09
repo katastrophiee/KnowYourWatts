@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices.Marshalling;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,7 +12,7 @@ namespace KnowYourWatts.Server
     {
         // Adjust all with appropriate security measures?
 
-        private const string ContainerName = "ServKeyContainer";
+        private const string containerName = "ServKeyContainer";
         private static RSAParameters _privateKey;
         // Delete this later - store in container
         private static string _publicKey;
@@ -25,18 +26,25 @@ namespace KnowYourWatts.Server
                 _privateKey = rsa.ExportParameters(true);
                 _publicKey = Convert.ToBase64String(rsa.ExportRSAPublicKey());
             }
+
+            SaveKeyInContainer(containerName);
         }
         // Decrypts the MPAN by applying the private key. In the future, this will implement the
         // GetKeyFromContainer method to first retrieve the private key from the container, as the key
         // will not be plainly stored.
-        public static string DecryptMPAN(byte[] data)
+        private static byte[] DecryptMPAN(byte[] data)
         {
-            using (RSA rsa = RSA.Create())
+            byte[] decryptedData;
+            // _privateKey = GetKeyFromContainer(containerName);
+            using (RSACryptoServiceProvider RSA = new RSACryptoServiceProvider())
             {
-                rsa.ImportParameters(_privateKey);
-                byte[] decryptedBytes = rsa.Decrypt(data, RSAEncryptionPadding.Pkcs1);
-                return Encoding.UTF8.GetString(decryptedBytes);
+                // Import parameters from container fetch
+                RSA.ImportParameters(GetKeyFromContainer(containerName));
+
+                // Decrypt the data with the parameters imported from the key  
+                decryptedData = RSA.Decrypt(data, true);
             }
+            return decryptedData;
         }
         // This is a placeholder for now, this should be moved to the client when client functionality is being added
         //public static byte[] EncryptData(string data, string publicKey)
@@ -56,13 +64,12 @@ namespace KnowYourWatts.Server
             return _publicKey;
         }
 
-        // IMPLEMENT LATER FOR BETTER SECURITY
-        private void SaveKeyInContainer(string containerName)
+        private static void SaveKeyInContainer(string containerName)
         {
             // CspParameters only works on Windows? What is the alternative?
             CspParameters cspParams = new CspParameters
             {
-                KeyContainerName = ContainerName,
+                KeyContainerName = containerName,
                 Flags = CspProviderFlags.UseMachineKeyStore // Optional: use machine-level key store
             };
 
@@ -73,12 +80,12 @@ namespace KnowYourWatts.Server
             }
         }
 
-        public static RSAParameters GetKeyFromContainer(string containerName)
+        private static RSAParameters GetKeyFromContainer(string containerName)
         {
             // Only works on windows
             CspParameters cspParams = new CspParameters
             {
-                KeyContainerName = ContainerName,
+                KeyContainerName = containerName,
                 Flags = CspProviderFlags.UseMachineKeyStore // Optional: use machine-level key store
             };
 
