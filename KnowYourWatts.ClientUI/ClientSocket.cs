@@ -16,7 +16,6 @@ public class ClientSocket (
     {
         try
         {
-
             var clientSocket = new Socket(_ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             // Connect to endpoint
             clientSocket.Connect(remoteEndPoint);

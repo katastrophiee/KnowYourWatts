@@ -20,28 +20,38 @@ public static class MauiProgram
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
             });
 
-        //var host = Dns.GetHostEntry("localhost");
-        //var ipAddress = host.AddressList[0];
-        //var remoteEndPoint = new IPEndPoint(ipAddress, 11000);
+        var host = Dns.GetHostEntry("localhost");
+        var ipAddress = host.AddressList[0];
+        var remoteEndPoint = new IPEndPoint(ipAddress, 11000);
 
-        //clientSocket.ConnectClient();
-        //builder.Services.AddSingleton(clientSocket);
-        //builder.Services.AddSingleton<IRandomisedValueProvider, RandomisedValueProvider>();
-        //builder.Services.AddSingleton<IServerRequestHandler, ServerRequestHandler>();
-        //builder.Services.AddSingleton<MainPage>();
 
-        //try
-        //{
-        //    clientSocket = new(
-        //        host,
-        //        ipAddress,
-        //        remoteEndPoint
-        //        );
-        //}
-        //catch (Exception ex) 
-        //{
-        //    Console.WriteLine("An error occured when starting the client: " + ex.ToString());
-        //}
+        builder.Services.AddSingleton<IRandomisedValueProvider, RandomisedValueProvider>();
+        builder.Services.AddSingleton<MainPage>();
+        builder.Services.AddSingleton(host);
+        builder.Services.AddSingleton(remoteEndPoint);
+        builder.Services.AddSingleton(ipAddress);
+        builder.Services.AddSingleton<ClientSocket>();
+
+        try
+        {
+            clientSocket = new(
+                host,
+                ipAddress,
+                remoteEndPoint
+                );
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("An error occured when starting the client: " + ex.ToString());
+        }
+        builder.Services.AddSingleton<Socket>(sp =>
+        {
+            var clientSocket = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            return clientSocket;
+        });
+        builder.Services.AddSingleton(clientSocket);
+        builder.Services.AddSingleton<IServerRequestHandler, ServerRequestHandler>();
+
 
 #if DEBUG
         builder.Logging.AddDebug();
