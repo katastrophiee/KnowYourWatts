@@ -7,10 +7,11 @@ using System.Threading.Tasks;
 
 namespace KnowYourWatts.Server
 {
-    public static class KeyHandler
+    public class KeyHandler
     {
         // Adjust all with appropriate security measures?
 
+        private const string ContainerName = "ServKeyContainer";
         private static RSAParameters _privateKey;
         // Delete this later - store in container
         private static string _publicKey;
@@ -56,14 +57,35 @@ namespace KnowYourWatts.Server
         }
 
         // IMPLEMENT LATER FOR BETTER SECURITY
-        //private void SaveKeyInContainer(string containerName)
-        //{
+        private void SaveKeyInContainer(string containerName)
+        {
+            // CspParameters only works on Windows? What is the alternative?
+            CspParameters cspParams = new CspParameters
+            {
+                KeyContainerName = ContainerName,
+                Flags = CspProviderFlags.UseMachineKeyStore // Optional: use machine-level key store
+            };
 
-        //}
+            using (RSACryptoServiceProvider rsaProvider = new RSACryptoServiceProvider(cspParams))
+            {
+                rsaProvider.PersistKeyInCsp = true;
+                rsaProvider.ImportParameters(_privateKey);
+            }
+        }
 
-        //public void GetKeyFromContainer(string containerName)
-        //{
+        public static RSAParameters GetKeyFromContainer(string containerName)
+        {
+            // Only works on windows
+            CspParameters cspParams = new CspParameters
+            {
+                KeyContainerName = ContainerName,
+                Flags = CspProviderFlags.UseMachineKeyStore // Optional: use machine-level key store
+            };
 
-        //}
+            using (RSACryptoServiceProvider rsaProvider = new RSACryptoServiceProvider(cspParams))
+            {
+                return rsaProvider.ExportParameters(true);
+            }
+        }
     }
 }
