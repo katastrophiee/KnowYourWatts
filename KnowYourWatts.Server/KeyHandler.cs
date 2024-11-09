@@ -29,13 +29,21 @@ namespace KnowYourWatts.Server
 
             SaveKeyInContainer(containerName);
         }
-        // Decrypts the MPAN by applying the private key. In the future, this will implement the
-        // GetKeyFromContainer method to first retrieve the private key from the container, as the key
-        // will not be plainly stored.
+
+        // Public entry point
+        public static byte[] ReceiveData(byte[] data)
+        {
+            byte[] decryptedMPAN = DecryptMPAN(data);
+            return decryptedMPAN;
+
+        }
+
+        // Decrypts the MPAN by applying the private key after retrieving it from a secure
+        // container. This is the actual function for decryption which should be hidden, hence the private
+        // modifier to public method ReceiveData.
         private static byte[] DecryptMPAN(byte[] data)
         {
             byte[] decryptedData;
-            // _privateKey = GetKeyFromContainer(containerName);
             using (RSACryptoServiceProvider RSA = new RSACryptoServiceProvider())
             {
                 // Import parameters from container fetch
@@ -59,6 +67,8 @@ namespace KnowYourWatts.Server
         //}
 
         // Could be replaced with a get set?
+        // On the client side - client will use this method, then send public key over socket
+        // Implement an event to receive key after connecting and enter decrypt - how?
         public static string GetPublicKey()
         {
             return _publicKey;

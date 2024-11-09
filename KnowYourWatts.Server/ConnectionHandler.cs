@@ -37,7 +37,7 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider) 
             Array.Copy(buffer, encryptedMpan, bytesRead);
 
             // Decrypt the MPAN
-            string decryptedMpan = KeyHandler.DecryptMPAN(encryptedMpan);
+            byte[] decryptedMpan = KeyHandler.ReceiveData(encryptedMpan);
             // Console writeline for debugging
             Console.WriteLine($"Server: Decrypted MPAN received: {decryptedMpan}");
 
