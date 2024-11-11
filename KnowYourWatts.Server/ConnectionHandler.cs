@@ -23,6 +23,14 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider) 
             // ADD VALID ERROR HANDLING, TRY CATCH, VERIFICATION DEPENDING ON DECRYPTION - HOW WILL THE SERVER VERIFY THE CLIENT BASED ON THE
             // MPAN RECEIVED?
 
+            //Ensure we are connected to the client and can respond to them
+            if (!handler.Connected || handler.RemoteEndPoint is null)
+            {
+                //We log an error to the console here as we are unable to respond to the client
+                Console.WriteLine("No target address for a response was provided from the recieved request.");
+                return;
+            }
+
             // Send the public key to the client
             string publicKey = KeyHandler.GetPublicKey();
             byte[] publicKeyBytes = Encoding.UTF8.GetBytes(publicKey);
@@ -34,20 +42,13 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider) 
             // Receive the encrypted MPAN from client
             int bytesRead = handler.Receive(buffer, SocketFlags.None);
             byte[] encryptedMpan = new byte[bytesRead];
-            Array.Copy(buffer, encryptedMpan, bytesRead);
+            // Not 100% sure if this is needed yet with the buffer being reused below
+            //Array.Copy(buffer, encryptedMpan, bytesRead);
 
             // Decrypt the MPAN
             byte[] decryptedMpan = KeyHandler.ReceiveData(encryptedMpan);
             // Console writeline for debugging
             Console.WriteLine($"Server: Decrypted MPAN received: {decryptedMpan}");
-
-            //Ensure we are connected to the client and can respond to them
-            if (!handler.Connected || handler.RemoteEndPoint is null)
-            {
-                //We log an error to the console here as we are unable to respond to the client
-                Console.WriteLine("No target address for a response was provided from the recieved request.");
-                return;
-            }
 
             int bytesReceived = handler.Receive(buffer);
 
