@@ -7,4 +7,7 @@ public interface IRandomisedValueProvider
     decimal GenerateRandomReading();
 
     int GenerateRandomTimeDelay();
+    int GenerateRandomTarrif();
+    int GenerateRandomBillingPeriod();
+    decimal GenerateRandomStandingCharge();
 }

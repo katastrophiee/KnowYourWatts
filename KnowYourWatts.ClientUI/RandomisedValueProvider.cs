@@ -3,7 +3,7 @@
 namespace KnowYourWatts.ClientUI;
 
 class RandomisedValueProvider : IRandomisedValueProvider
-{
+{ 
     public string GenerateMpanForClient()
     {
         var random = new Random();
@@ -18,7 +18,6 @@ class RandomisedValueProvider : IRandomisedValueProvider
         return mpan.ToString();
        
     }
-
     public decimal GenerateRandomReading()
     {
         var random = new Random();
@@ -36,5 +35,22 @@ class RandomisedValueProvider : IRandomisedValueProvider
 
         return delay;
     }
-
+    public int GenerateRandomTarrif()
+    {
+        var random = new Random();
+        int tarrif = random.Next(0, 3);
+        return tarrif;
+    }
+    public int GenerateRandomBillingPeriod()
+    {
+        var random = new Random();
+        int billingPeriod = random.Next();
+        return billingPeriod;
+    }
+    public decimal GenerateRandomStandingCharge()
+    {
+        var random = new Random();
+        double standingCharge = random.NextDouble();
+        return (decimal)standingCharge;
+    }
 }

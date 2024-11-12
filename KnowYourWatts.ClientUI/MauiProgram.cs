@@ -23,7 +23,7 @@ public static class MauiProgram
         var host = Dns.GetHostEntry("localhost");
         var ipAddress = host.AddressList[0];
         var remoteEndPoint = new IPEndPoint(ipAddress, 11000);
-
+        //Generate random Mpan
 
         builder.Services.AddSingleton<IRandomisedValueProvider, RandomisedValueProvider>();
         builder.Services.AddSingleton<MainPage>();
@@ -50,6 +50,7 @@ public static class MauiProgram
             return clientSocket;
         });
         builder.Services.AddSingleton(clientSocket);
+        clientSocket.ConnectClient();
         builder.Services.AddSingleton<IServerRequestHandler, ServerRequestHandler>();
 
 
