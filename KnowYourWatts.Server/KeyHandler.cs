@@ -33,8 +33,16 @@ namespace KnowYourWatts.Server
         // Public entry point
         public static byte[] ReceiveData(byte[] data)
         {
-            byte[] decryptedMPAN = DecryptMPAN(data);
-            return decryptedMPAN;
+            try
+            {
+                byte[] decryptedMPAN = DecryptMPAN(data);
+                return decryptedMPAN;
+            }
+            catch (CryptographicException ex)
+            {
+                Console.WriteLine($"Error decrypting data: {ex.Message}");
+                throw;
+            }
 
         }
 
@@ -44,27 +52,25 @@ namespace KnowYourWatts.Server
         private static byte[] DecryptMPAN(byte[] data)
         {
             byte[] decryptedData;
-            using (RSACryptoServiceProvider RSA = new RSACryptoServiceProvider())
+            using (RSACryptoServiceProvider rsa = new RSACryptoServiceProvider())
             {
-                // Import parameters from container fetch
-                RSA.ImportParameters(GetKeyFromContainer(containerName));
+                // Import parameters from the secure container
+                rsa.ImportParameters(GetKeyFromContainer(containerName));
 
-                // Decrypt the data with the parameters imported from the key  
-                decryptedData = RSA.Decrypt(data, true);
+                // Decrypt the data using the private key. Ensure the padding matches the encryption padding.
+                decryptedData = rsa.Decrypt(data, RSAEncryptionPadding.Pkcs1); // Adjust padding as needed
             }
             return decryptedData;
         }
         // This is a placeholder for now, this should be moved to the client when client functionality is being added
-        //public static byte[] EncryptData(string data, string publicKey)
-        //{
-        //    byte[] dataBytes = Encoding.UTF8.GetBytes(data);
-
-        //    using (RSA rsa = RSA.Create())
-        //    {
-        //        rsa.ImportRSAPublicKey(Convert.FromBase64String(publicKey), out _);
-        //        return rsa.Encrypt(dataBytes, RSAEncryptionPadding.Pkcs1);
-        //    }
-        //}
+        public static byte[] EncryptData(byte[] data, string publicKey)
+        {
+            using (RSA rsa = RSA.Create())
+            {
+                rsa.ImportRSAPublicKey(Convert.FromBase64String(publicKey), out _);
+                return rsa.Encrypt(data, RSAEncryptionPadding.Pkcs1);
+            }
+        }
 
         // Could be replaced with a get set?
         // On the client side - client will use this method, then send public key over socket

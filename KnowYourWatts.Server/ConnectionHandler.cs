@@ -42,13 +42,16 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider) 
             // Receive the encrypted MPAN from client
             int bytesRead = handler.Receive(buffer, SocketFlags.None);
             byte[] encryptedMpan = new byte[bytesRead];
+            encryptedMpan = KeyHandler.EncryptData(encryptedMpan, KeyHandler.GetPublicKey());
+            // FOR DEBUGGING ONLY
+            Console.WriteLine("Server: Encrypted MPAN received: " + BitConverter.ToString(encryptedMpan).Replace("-", " "));
             // Not 100% sure if this is needed yet with the buffer being reused below
             //Array.Copy(buffer, encryptedMpan, bytesRead);
 
             // Decrypt the MPAN
             byte[] decryptedMpan = KeyHandler.ReceiveData(encryptedMpan);
             // Console writeline for debugging
-            Console.WriteLine($"Server: Decrypted MPAN received: {decryptedMpan}");
+            Console.WriteLine($"Server: Decrypted MPAN: " + BitConverter.ToString(decryptedMpan).Replace("-", " "));
 
             int bytesReceived = handler.Receive(buffer);
 
