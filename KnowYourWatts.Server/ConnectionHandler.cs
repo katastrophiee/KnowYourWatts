@@ -41,7 +41,6 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider) 
             int PKInt = handler.Receive(buffer);
             var PKString = Encoding.ASCII.GetString(buffer, 0, PKInt);
 
-            // NEED TO ADD CODE TO SEND THE MPAN FROM THE CLIENT TO SERVER
             byte[] PKBytes = Encoding.UTF8.GetBytes(PKString);
             byte[] encryptedMpan = KeyHandler.EncryptData(PKBytes, KeyHandler.GetPublicKey());
 
