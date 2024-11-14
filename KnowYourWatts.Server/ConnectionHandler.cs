@@ -6,6 +6,7 @@ using KnowYourWatts.Server.DTO.Requests;
 using KnowYourWatts.Server.DTO.Enums;
 using KnowYourWatts.Server.DTO.Response;
 using System.Reflection.Metadata;
+using System.Collections;
 
 namespace KnowYourWatts.Server;
 
@@ -20,8 +21,7 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider) 
         {
             byte[] buffer = new byte[1024];
 
-            // ADD VALID ERROR HANDLING, TRY CATCH, VERIFICATION DEPENDING ON DECRYPTION - HOW WILL THE SERVER VERIFY THE CLIENT BASED ON THE
-            // MPAN RECEIVED?
+            // ADD VALID ERROR HANDLING, TRY CATCH
 
             //Ensure we are connected to the client and can respond to them
             if (!handler.Connected || handler.RemoteEndPoint is null)
@@ -38,20 +38,22 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider) 
             // Console writeline for debugging
             Console.WriteLine("Server: Public key sent to client.");
 
+            int PKInt = handler.Receive(buffer);
+            var PKString = Encoding.ASCII.GetString(buffer, 0, PKInt);
+
             // NEED TO ADD CODE TO SEND THE MPAN FROM THE CLIENT TO SERVER
-            // Receive the encrypted MPAN from client
-            int bytesRead = handler.Receive(buffer, SocketFlags.None);
-            byte[] encryptedMpan = new byte[bytesRead];
-            encryptedMpan = KeyHandler.EncryptData(encryptedMpan, KeyHandler.GetPublicKey());
+            byte[] PKBytes = Encoding.UTF8.GetBytes(PKString);
+            byte[] encryptedMpan = KeyHandler.EncryptData(PKBytes, KeyHandler.GetPublicKey());
+
             // FOR DEBUGGING ONLY
-            Console.WriteLine("Server: Encrypted MPAN received: " + BitConverter.ToString(encryptedMpan).Replace("-", " "));
+            Console.WriteLine("Server: Encrypted MPAN received: " + BitConverter.ToString(encryptedMpan).Replace("-", " ")); // Encrypted MPAN from client
             // Not 100% sure if this is needed yet with the buffer being reused below
             //Array.Copy(buffer, encryptedMpan, bytesRead);
 
             // Decrypt the MPAN
             byte[] decryptedMpan = KeyHandler.ReceiveData(encryptedMpan);
             // Console writeline for debugging
-            Console.WriteLine($"Server: Decrypted MPAN: " + BitConverter.ToString(decryptedMpan).Replace("-", " "));
+            Console.WriteLine($"Server: Decrypted MPAN: " + Encoding.UTF8.GetString(decryptedMpan));
 
             int bytesReceived = handler.Receive(buffer);
 
@@ -80,6 +82,14 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider) 
             {
                 var response = Encoding.ASCII.GetBytes(SerializeErrorResponse("No MPAN was provided with the request."));
                 handler.Send(response);
+                return;
+            }
+
+            // If decrypted MPAN does not match request MPAN, return error as may have wrong key.
+            if (request.Mpan != Encoding.UTF8.GetString(decryptedMpan))
+            {
+                var resposnse = Encoding.ASCII.GetBytes(SerializeErrorResponse("The decrypted MPAN does not match the request MPAN"));
+                handler.Send(resposnse);
                 return;
             }
 
