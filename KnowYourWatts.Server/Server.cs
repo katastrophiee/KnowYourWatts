@@ -1,6 +1,7 @@
 ﻿using KnowYourWatts.Server.Interfaces;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 
 namespace KnowYourWatts.Server;
 
@@ -26,6 +27,14 @@ public sealed class Server(
             listener.Bind(LocalEndPoint);
             listener.Listen(30);
             Console.WriteLine($"Server started at {LocalEndPoint.Address}:{LocalEndPoint.Port}");
+            // TESTING WITHOUT CLIENT
+            // Test MPAN
+            var PKString = "164584643164";
+
+            byte[] PKBytes = Encoding.UTF8.GetBytes(PKString);
+            byte[] encryptedMpan = KeyHandler.EncryptData(PKBytes, KeyHandler.GetPublicKey());
+            Console.WriteLine("Server: Encrypted MPAN: " + BitConverter.ToString(encryptedMpan).Replace("-", " "));
+            //TESTING WITHOUT CLIENT
 
             while (RunServer)
             {

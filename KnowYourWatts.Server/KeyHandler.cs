@@ -62,7 +62,7 @@ namespace KnowYourWatts.Server
             }
             return decryptedData;
         }
-        // This is a placeholder for now, this should be moved to the client when client functionality is being added
+        // Should this be moved to the client or kept here and called from the client?
         public static byte[] EncryptData(byte[] data, string publicKey)
         {
             using (RSA rsa = RSA.Create())
