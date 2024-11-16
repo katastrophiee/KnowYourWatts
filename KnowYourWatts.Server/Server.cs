@@ -28,7 +28,7 @@ public sealed class Server(
             listener.Listen(30);
             Console.WriteLine($"Server started at {LocalEndPoint.Address}:{LocalEndPoint.Port}");
             // TESTING WITHOUT CLIENT
-            // Test MPAN
+            // Test MPAN data
             var PKString = "164584643164";
 
             byte[] PKBytes = Encoding.UTF8.GetBytes(PKString);
