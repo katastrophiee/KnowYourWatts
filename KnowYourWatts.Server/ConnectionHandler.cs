@@ -4,24 +4,23 @@ using System.Net.Sockets;
 using System.Text;
 using KnowYourWatts.Server.DTO.Requests;
 using KnowYourWatts.Server.DTO.Enums;
-using KnowYourWatts.Server.DTO.Response;
-using System.Reflection.Metadata;
-using System.Collections;
+using KnowYourWatts.Server.DTO.Responses;
 
 namespace KnowYourWatts.Server;
 
-public sealed class ConnectionHandler(ICalculationProvider calculationProvider) : IConnectionHandler
+public sealed class ConnectionHandler(
+    ICalculationProvider calculationProvider,
+    IKeyHandler keyHandler) : IConnectionHandler
 {
     //We use dependency injection to ensure we follow the SOLID principles
     private readonly ICalculationProvider _calculationProvider = calculationProvider;
+    private readonly IKeyHandler _keyHandler = keyHandler;
 
     public void HandleConnection(Socket handler)
     {
         try
         {
             byte[] buffer = new byte[1024];
-
-            // ADD VALID ERROR HANDLING, TRY CATCH
 
             //Ensure we are connected to the client and can respond to them
             if (!handler.Connected || handler.RemoteEndPoint is null)
@@ -30,16 +29,6 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider) 
                 Console.WriteLine("No target address for a response was provided from the recieved request.");
                 return;
             }
-
-            // Send the public key to the client
-            string publicKey = KeyHandler.GetPublicKey();
-            byte[] publicKeyBytes = Encoding.UTF8.GetBytes(publicKey);
-            handler.Send(publicKeyBytes, SocketFlags.None);
-            // Console writeline for debugging
-            Console.WriteLine("Server: Public key sent to client.");
-
-            //// Not 100% sure if this is needed yet with the buffer being reused below
-            ////Array.Copy(buffer, encryptedMpan, bytesRead);
 
             int bytesReceived = handler.Receive(buffer);
 
@@ -54,13 +43,20 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider) 
             //Convert the data to a string so we can use it as JSON
             var receivedData = Encoding.ASCII.GetString(buffer, 0, bytesReceived);
 
-            //Convert the JSON to an object so we can use it for our request
+            //Convert the JSON to an object so we can use the request
             var request = JsonConvert.DeserializeObject<ServerRequest>(receivedData);
 
             if (request is null)
             {
                 var response = Encoding.ASCII.GetBytes(SerializeErrorResponse("The request did not contain any data when converted to an object."));
                 handler.Send(response);
+                return;
+            }
+
+            if (request.RequestType == RequestType.PublicKey)
+            {
+                // Send the public key to the client
+                handler.Send(Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(_keyHandler.PublicKey)));
                 return;
             }
 
@@ -71,15 +67,16 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider) 
                 return;
             }
 
-            // TESTING WITHOUT CLIENT
-            byte[] decryptedMpan = KeyHandler.ReceiveData(request.encryptedMPAN);
-            Console.WriteLine($"Server: Decrypted MPAN: " + Encoding.UTF8.GetString(decryptedMpan));
-            Console.WriteLine($"Server: Encrypted MPAN: " + Encoding.UTF8.GetString(request.encryptedMPAN));
-            Console.WriteLine($"Server: MPAN: " + request.Mpan);
-            // TESTING WITHOUT CLIENT
+            //remove once client is implemented
+            var encryptedMpan = _keyHandler.EncryptData(Encoding.UTF8.GetBytes(request.Mpan), _keyHandler.PublicKey);
+
+            request.EncryptedMpan = encryptedMpan;
+            //end
+
+            var decryptedMpan = _keyHandler.DecryptClientMpan(request.EncryptedMpan);
 
             // If decrypted MPAN does not match request MPAN, return error as may have wrong key.
-            if (request.Mpan != Encoding.UTF8.GetString(decryptedMpan))
+            if (request.Mpan != decryptedMpan)
             {
                 var resposnse = Encoding.ASCII.GetBytes(SerializeErrorResponse("The decrypted MPAN does not match the request MPAN"));
                 handler.Send(resposnse);

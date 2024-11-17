@@ -1,17 +1,18 @@
 ﻿using KnowYourWatts.Server.Interfaces;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 
 namespace KnowYourWatts.Server;
 
 public sealed class Server(
     IConnectionHandler connectionHandler,
+    IKeyHandler keyHandler,
     IPHostEntry host,
     IPAddress ipAddress,
     IPEndPoint localEndPoint)
 {
     private readonly IConnectionHandler _connectionHandler = connectionHandler;
+    private readonly IKeyHandler _keyHandler = keyHandler;
     private readonly IPHostEntry Host = host;
     private readonly IPAddress IpAddress = ipAddress;
     private readonly IPEndPoint LocalEndPoint = localEndPoint;
@@ -19,22 +20,12 @@ public sealed class Server(
 
     public void Start()
     {
-        // Calls key generator when server starts
-        KeyHandler.GenerateKeys(); 
         try
         {
             var listener = new Socket(IpAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             listener.Bind(LocalEndPoint);
             listener.Listen(30);
             Console.WriteLine($"Server started at {LocalEndPoint.Address}:{LocalEndPoint.Port}");
-            // TESTING WITHOUT CLIENT
-            // Test MPAN data
-            var PKString = "164584643164";
-
-            byte[] PKBytes = Encoding.UTF8.GetBytes(PKString);
-            byte[] encryptedMpan = KeyHandler.EncryptData(PKBytes, KeyHandler.GetPublicKey());
-            Console.WriteLine("Server: Encrypted MPAN: " + BitConverter.ToString(encryptedMpan).Replace("-", " "));
-            //TESTING WITHOUT CLIENT
 
             while (RunServer)
             {

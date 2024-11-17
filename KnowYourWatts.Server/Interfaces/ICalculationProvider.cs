@@ -1,5 +1,5 @@
 ﻿using KnowYourWatts.Server.DTO.Requests;
-using KnowYourWatts.Server.DTO.Response;
+using KnowYourWatts.Server.DTO.Responses;
 
 namespace KnowYourWatts.Server.Interfaces;
 

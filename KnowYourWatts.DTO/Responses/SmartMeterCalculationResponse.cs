@@ -1,4 +1,4 @@
-﻿namespace KnowYourWatts.Server.DTO.Response;
+﻿namespace KnowYourWatts.Server.DTO.Responses;
 
 public class SmartMeterCalculationResponse
 {
@@ -16,4 +16,3 @@ public class SmartMeterCalculationResponse
         ErrorMessage = errorMessage;
     }
 }
-;

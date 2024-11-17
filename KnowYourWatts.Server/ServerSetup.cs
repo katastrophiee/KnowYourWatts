@@ -29,6 +29,7 @@ public sealed class ServerSetup
         services.AddScoped<IPreviousReadingRepository, PreviousReadingRepository>();
         services.AddScoped<ITariffRepository, TariffRepository>();
         services.AddScoped<ICostRepository, CostRepository>();
+        services.AddScoped<IKeyHandler, KeyHandler>();
 
         var serviceProvider = services.BuildServiceProvider();
 
@@ -36,6 +37,7 @@ public sealed class ServerSetup
         {
             Server = new(
                 serviceProvider.GetRequiredService<IConnectionHandler>(),
+                serviceProvider.GetRequiredService<IKeyHandler>(),
                 host,
                 ipAddress,
                 localEndPoint

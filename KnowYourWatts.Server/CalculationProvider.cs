@@ -1,6 +1,6 @@
 ﻿using KnowYourWatts.MockDb.Interfaces;
 using KnowYourWatts.Server.DTO.Requests;
-using KnowYourWatts.Server.DTO.Response;
+using KnowYourWatts.Server.DTO.Responses;
 using KnowYourWatts.Server.Interfaces;
 
 namespace KnowYourWatts.Server;
