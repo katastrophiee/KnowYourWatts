@@ -4,7 +4,7 @@ using System.Net.Sockets;
 using System.Text;
 using KnowYourWatts.Server.DTO.Requests;
 using KnowYourWatts.Server.DTO.Enums;
-using KnowYourWatts.Server.DTO.Response;
+using KnowYourWatts.Server.DTO.Responses;
 
 namespace KnowYourWatts.Server;
 
@@ -109,7 +109,7 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider) 
             //Calculate the cost of the electricity used
             var calculatedCost = _calculationProvider.CalculateCost(calculateCostRequest);
 
-            return new(calculatedCost);
+            return calculatedCost;
         }
         catch (Exception ex)
         {

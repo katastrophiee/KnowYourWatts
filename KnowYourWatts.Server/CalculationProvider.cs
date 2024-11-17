@@ -1,6 +1,6 @@
 ﻿using KnowYourWatts.MockDb.Interfaces;
 using KnowYourWatts.Server.DTO.Requests;
-using KnowYourWatts.Server.DTO.Response;
+using KnowYourWatts.Server.DTO.Responses;
 using KnowYourWatts.Server.Interfaces;
 
 namespace KnowYourWatts.Server;
@@ -14,7 +14,7 @@ public sealed class CalculationProvider(
     private readonly IPreviousReadingRepository  _previousReadingRepository = previousReadingRepository;
     private readonly ICostRepository _costRepository = costRepository;
 
-    public SmartMeterCalculationResponse CalculateCost(SmartMeterCalculationRequest request)
+    public CalculationResponse CalculateCost(SmartMeterCalculationRequest request)
     {
         var previousReading = _previousReadingRepository.GetPreviousReadingByMpan(request.Mpan);
 
@@ -55,6 +55,6 @@ public sealed class CalculationProvider(
         //We need to save the a new previous reading to the mock database for the next time we calculate the cost
         _previousReadingRepository.AddOrUpdatePreviousReading(request.Mpan, request.CurrentReading);
 
-        return new SmartMeterCalculationResponse(totalCost);
+        return new CalculationResponse(totalCost);
     }
 }
