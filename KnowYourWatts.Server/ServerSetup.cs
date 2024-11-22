@@ -20,8 +20,7 @@ public sealed class ServerSetup
     {
         var services = new ServiceCollection();
 
-        var host = Dns.GetHostEntry("localhost");
-        var ipAddress = host.AddressList[0];
+        var ipAddress = Dns.GetHostEntry("localhost").AddressList[0];
         var localEndPoint = new IPEndPoint(ipAddress, 11000);
 
         services.AddScoped<IConnectionHandler, ConnectionHandler>();
@@ -36,14 +35,13 @@ public sealed class ServerSetup
         {
             Server = new(
                 serviceProvider.GetRequiredService<IConnectionHandler>(),
-                host,
                 ipAddress,
                 localEndPoint
             );
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"An error occurred while setting up the server. {ex}");
+            Console.WriteLine($"An error occurred while setting up the server: {ex}");
         }
     }
 }
