@@ -29,7 +29,6 @@ public sealed class ConnectionHandler(
                 Console.WriteLine("No target address for a response was provided from the recieved request.");
                 return;
             }
-
             int bytesReceived = handler.Receive(buffer);
 
             //Check we received some data from the client

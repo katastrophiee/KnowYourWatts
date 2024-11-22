@@ -7,8 +7,6 @@ namespace KnowYourWatts.Server;
 public sealed class KeyHandler : IKeyHandler
 {
     public static RSA CryptographyKey { get; set; } = null!;
-
-    // Delete this later - store in container
     public string PublicKey { get; set; } = null!;
     private static RSAParameters PrivateKey;
     private const string ContainerName = "ServKeyContainer";
