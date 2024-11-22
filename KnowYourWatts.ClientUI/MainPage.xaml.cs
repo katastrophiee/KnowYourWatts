@@ -1,6 +1,7 @@
 ﻿using KnowYourWatts.ClientUI.DTO.Enums;
 using KnowYourWatts.ClientUI.DTO.Models;
 using KnowYourWatts.ClientUI.Interfaces;
+using System.Net;
 using System.Timers;
 
 namespace KnowYourWatts.ClientUI;
@@ -14,22 +15,24 @@ public partial class MainPage : ContentPage
     private TariffType tariffType;
     private decimal standingCharge;
     private int billingPeriod;
-    private MeterReadings? MeterReading { get; set; }
-
+    private MeterReadings? MeterReading  { get; set; }
     public MainPage(IRandomisedValueProvider randomisedValueProvider, IServerRequestHandler serverRequestHandler)
     {
         _randomisedValueProvider = randomisedValueProvider;
         _serverRequestHandler = serverRequestHandler;
+        MeterReading = new MeterReadings();
         initialReading = _randomisedValueProvider.GenerateRandomReading();
-
+        MeterReading.Usage = initialReading;
         //Generate initial Tariff Type
         tariffType = (TariffType)Enum.ToObject(typeof(TariffType),_randomisedValueProvider.GenerateRandomTarrif());
         //Generate initial Standing charge
         standingCharge = _randomisedValueProvider.GenerateRandomStandingCharge();
         //Generate initial billing period
         InitializeComponent();
+        
         StartClock();
-        RandomReadingTimer();
+        //RandomReadingTimer();
+       
     }
 
     private void StartClock()//fix later
@@ -81,11 +84,12 @@ public partial class MainPage : ContentPage
                 case "Current Usages":
                     UsageCost.Text = $"£{MeterReading.Cost}";
                     UsageKW.Text = $"{MeterReading.Usage}KW";
-                  //  _serverRequestHandler.CreateRequest(initialReading, DTO.Enums.RequestType.CurrentUsage, tariffType);
                     break;
                 case "Today's Usage":
                     UsageCost.Text = initialReading.ToString();
                     UsageKW.Text = "18.7KW";
+                     _serverRequestHandler.CreateRequest(initialReading, RequestType.TodaysUsage, tariffType, billingPeriod:90,standingCharge:15);
+                    MeterReading.Cost = _serverRequestHandler.GetResponse();
 
                     break;
                 case "Week Usage":
@@ -93,6 +97,7 @@ public partial class MainPage : ContentPage
                     UsageKW.Text = "18.7KW";
                     break;
             }
+
         }
     }
 

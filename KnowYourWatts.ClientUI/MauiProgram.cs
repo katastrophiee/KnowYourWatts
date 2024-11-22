@@ -30,7 +30,7 @@ public static class MauiProgram
         builder.Services.AddSingleton(host);
         builder.Services.AddSingleton(remoteEndPoint);
         builder.Services.AddSingleton(ipAddress);
-        builder.Services.AddSingleton<ClientSocket>();
+        builder.Services.AddScoped<ClientSocket>();
 
         try
         {

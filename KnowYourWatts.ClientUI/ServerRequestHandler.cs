@@ -1,5 +1,6 @@
 ﻿using KnowYourWatts.ClientUI.DTO.Enums;
 using KnowYourWatts.ClientUI.DTO.Requests;
+using KnowYourWatts.ClientUI.DTO.Response;
 using KnowYourWatts.ClientUI.Interfaces;
 using Newtonsoft.Json;
 using System.Net;
@@ -40,10 +41,13 @@ public class ServerRequestHandler(IRandomisedValueProvider randomisedValueProvid
         {
             // If the socket is null and the socket is not connected, throw an invalid operation exception (method cannot be performed).
             // Use this exception as you wish, this is a basic implementation.
-            /*if (ClientSocket?.Connected != true)
+            if (ClientSocket?.Connected != true)
             {
+                var host = Dns.GetHostEntry("localhost");
+                var ipAddress = host.AddressList[0];
+                _endPoint = new IPEndPoint(ipAddress,11000);
                 ClientSocket.Connect(_endPoint);
-            }*/
+            }
 
             if (Mpan is null || string.IsNullOrEmpty(Mpan))
             {
@@ -67,9 +71,21 @@ public class ServerRequestHandler(IRandomisedValueProvider randomisedValueProvid
 
         }
     }
-    //Call this function right after the request is sent.
-    public void GetResponse()
+    public decimal? GetResponse()
     {
+        if (ClientSocket?.Connected != true)
+        {
+            var host = Dns.GetHostEntry("localhost");
+            var ipAddress = host.AddressList[0];
+            _endPoint = new IPEndPoint(ipAddress, 11000);
+            ClientSocket.Connect(_endPoint);
+        }
+        byte[] buffer = new byte[1024];
+        int bytesReceived = ClientSocket.Receive(buffer);
+        var receivedData = Encoding.ASCII.GetString(buffer, 0, bytesReceived);
+        var response =  JsonConvert.DeserializeObject<SmartMeterCalculationResponse>(receivedData);
+        decimal? responseDecimal = response.Cost;
+        return responseDecimal;
         //check the requestype
         // get the response data, convert to string
         // populate the MeterReading Model class

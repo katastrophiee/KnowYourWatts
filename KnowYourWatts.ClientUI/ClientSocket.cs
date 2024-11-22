@@ -19,6 +19,10 @@ public class ClientSocket (
             var clientSocket = new Socket(_ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             // Connect to endpoint
             clientSocket.Connect(remoteEndPoint);
+            if (clientSocket.Connected) 
+            {
+                Console.WriteLine("Connected");
+            }
         }
         catch (Exception ex)
         {
