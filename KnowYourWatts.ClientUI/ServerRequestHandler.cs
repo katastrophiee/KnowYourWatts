@@ -41,7 +41,7 @@ public class ServerRequestHandler(IRandomisedValueProvider randomisedValueProvid
         {
             // If the socket is null and the socket is not connected, throw an invalid operation exception (method cannot be performed).
             // Use this exception as you wish, this is a basic implementation.
-            if (ClientSocket?.Connected != true)
+            while (ClientSocket?.Connected != true)
             {
                 var host = Dns.GetHostEntry("localhost");
                 var ipAddress = host.AddressList[0];
@@ -73,7 +73,7 @@ public class ServerRequestHandler(IRandomisedValueProvider randomisedValueProvid
     }
     public decimal? GetResponse()
     {
-        if (ClientSocket?.Connected != true)
+        while (ClientSocket?.Connected != true)
         {
             var host = Dns.GetHostEntry("localhost");
             var ipAddress = host.AddressList[0];

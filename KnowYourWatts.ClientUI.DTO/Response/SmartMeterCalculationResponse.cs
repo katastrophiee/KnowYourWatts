@@ -7,7 +7,7 @@ public class SmartMeterCalculationResponse
     public decimal? Cost { get; set; }
 
     public string? ErrorMessage { get; set; }
-    [JsonConstructor]
+   /* [JsonConstructor]
     public SmartMeterCalculationResponse(decimal cost)
     {
         Cost = cost;
@@ -16,6 +16,6 @@ public class SmartMeterCalculationResponse
     public SmartMeterCalculationResponse(string errorMessage)
     {
         ErrorMessage = errorMessage;
-    }
+    }*/
 }
 ;
