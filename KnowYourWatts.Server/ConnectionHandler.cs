@@ -67,13 +67,16 @@ public sealed class ConnectionHandler(
                 return;
             }
 
-            //if (request.EncryptedMpan.Length == 0)
-            //{
-            //    var reponse = Encoding.ASCII.GetBytes(SerializeErrorResponse("BOOOOOO"));
-            //    handler.Send(reponse);
-            //    return;
-            //}
+            // Doesn't work
+            if (request.EncryptedMpan.Length == 0)
+            {
+                var reponse = Encoding.ASCII.GetBytes(SerializeErrorResponse("BOOOOOO"));
+                handler.Send(reponse);
+                return;
+            }
 
+            // Un-commenting this makes the above code work, so likely an issue with the request not sending an encrypted mpan. Likely because
+            // encryption not yet performed on client side.
             //remove once client is implemented
             //var encryptedMpan = _keyHandler.EncryptData(Encoding.UTF8.GetBytes(request.Mpan), _keyHandler.PublicKey);
 
