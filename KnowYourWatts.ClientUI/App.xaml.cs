@@ -4,7 +4,7 @@ namespace KnowYourWatts.ClientUI;
 
 public partial class App : Application
 {
-    public App(ClientSocket clientSocket)
+    public App()
     {
         InitializeComponent();
         MainPage = new AppShell();
