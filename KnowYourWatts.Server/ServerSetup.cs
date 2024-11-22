@@ -41,7 +41,7 @@ public sealed class ServerSetup
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"An error occurred while setting up the server. {ex}");
+            Console.WriteLine($"An error occurred while setting up the server: {ex}");
         }
     }
 }

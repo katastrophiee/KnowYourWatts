@@ -3,26 +3,36 @@ using System.Net.Sockets;
 
 namespace KnowYourWatts.ClientUI;
 
-public class ClientSocket (
-    IPHostEntry host,
+public class ClientSocket(
     IPAddress ipAddress,
     IPEndPoint remoteEndPoint)
 {
-    private readonly IPEndPoint _remoteEndPoint = remoteEndPoint;
-    private readonly IPAddress _ipAddress = ipAddress;
-    private readonly IPHostEntry _ipHostEntry = host;
+    public Socket Socket { get; set; }
+    public IPAddress IPAddress { get; set; } = ipAddress;
+    public IPEndPoint RemoteEndPoint { get; set; } = remoteEndPoint;
 
-    public void ConnectClient()
+
+    public async Task ConnectClientToServer()
     {
         try
         {
-            var clientSocket = new Socket(_ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            // Connect to endpoint
-            clientSocket.Connect(remoteEndPoint);
-            if (clientSocket.Connected) 
+            Socket = new Socket(IPAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+
+            for (var retryCount = 0; retryCount < 5; retryCount++)
             {
-                Console.WriteLine("Connected");
+                if (!Socket.Connected)
+                {
+                    // Connect to the endpoint on the server
+                    await Socket.ConnectAsync(RemoteEndPoint);
+                }
+                else
+                {
+                    Console.WriteLine("Successfully connected to the server.");
+                    return;
+                }
             }
+
+            Console.WriteLine("The client could not connect to the server.");
         }
         catch (Exception ex)
         {

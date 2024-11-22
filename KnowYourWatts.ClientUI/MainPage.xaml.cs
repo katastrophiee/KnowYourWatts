@@ -1,53 +1,115 @@
 ﻿using KnowYourWatts.ClientUI.DTO.Enums;
 using KnowYourWatts.ClientUI.DTO.Models;
 using KnowYourWatts.ClientUI.Interfaces;
-using System.Net;
 using System.Timers;
 
 namespace KnowYourWatts.ClientUI;
 
 public partial class MainPage : ContentPage
 {
+    private MeterReadings CurrentMeterReading = null!;
+    private MeterReadings DailyMeterReading = null!;
+    private MeterReadings WeeklyMeterReading = null!;
+
     readonly IRandomisedValueProvider _randomisedValueProvider;
     readonly IServerRequestHandler _serverRequestHandler;
-    private System.Timers.Timer timer;
-    private decimal initialReading;
-    private TariffType tariffType;
-    private decimal standingCharge;
-    private int billingPeriod;
-    private MeterReadings? MeterReading  { get; set; }
+
+    private TariffType TariffType;
+    private decimal StandingCharge;
+    private string Mpan;
+
     public MainPage(IRandomisedValueProvider randomisedValueProvider, IServerRequestHandler serverRequestHandler)
     {
         _randomisedValueProvider = randomisedValueProvider;
         _serverRequestHandler = serverRequestHandler;
-        MeterReading = new MeterReadings();
-        initialReading = _randomisedValueProvider.GenerateRandomReading();
-        MeterReading.Usage = initialReading;
+
+        CurrentMeterReading = new()
+        {
+            Cost = 0,
+            Usage = _randomisedValueProvider.GenerateRandomReading()
+        };
+
+        DailyMeterReading = new()
+        {
+            Cost = 0,
+            Usage = _randomisedValueProvider.GenerateRandomReading()
+        };
+
+        WeeklyMeterReading = new()
+        {
+            Cost = 0,
+            Usage = _randomisedValueProvider.GenerateRandomReading()
+        };
+
         //Generate initial Tariff Type
-        tariffType = (TariffType)Enum.ToObject(typeof(TariffType),_randomisedValueProvider.GenerateRandomTarrif());
+        TariffType = (TariffType)Enum.ToObject(typeof(TariffType),_randomisedValueProvider.GenerateRandomTarrif());
+
         //Generate initial Standing charge
-        standingCharge = _randomisedValueProvider.GenerateRandomStandingCharge();
-        //Generate initial billing period
+        StandingCharge = _randomisedValueProvider.GenerateRandomStandingCharge();
+
+        //Generate the unique identifier for the client
+        Mpan = _randomisedValueProvider.GenerateMpanForClient();
+
         InitializeComponent();
         
         StartClock();
-        //RandomReadingTimer();
-       
+        SendRandomCurrentReadingTimer();
     }
 
-    private void StartClock()//fix later
+    private void SendRandomCurrentReadingTimer()
     {
-        timer = new System.Timers.Timer(60000); // 60000 milliseconds = 1 minute
+        var timer = new System.Timers.Timer()
+        {
+            AutoReset = false
+        };
+
+        timer.Elapsed += async (sender, e) =>
+        {
+            // Stop the timer while the request to the server is being sent
+            timer.Stop();
+
+            await SendReadingToServer();
+
+            timer.Interval = 1000;
+            //timer.Interval = _randomisedValueProvider.GenerateRandomTimeDelay();
+            timer.Start();
+        };
+
+        timer.Interval = 1000;
+        //timer.Interval = _randomisedValueProvider.GenerateRandomTimeDelay();
+        timer.Start();
+    }
+
+    // change to be modular and have seperate functions and timers for each req type
+    private async Task SendReadingToServer()
+    {
+        var response = await _serverRequestHandler.SendRequestToServer(
+            CurrentMeterReading.Usage,
+            RequestType.CurrentUsage,
+            TariffType,
+            1 /*BillingPeriod*/, //billing period should be retireved from the page we're sending the request from
+            StandingCharge,
+            Mpan
+        );
+
+        if (!string.IsNullOrEmpty(response.ErrorMessage))
+        {
+            //show error on error page
+        }
+        else if (response.Cost is not null)
+        {
+            CurrentMeterReading.Cost += response.Cost.Value;
+            CurrentMeterReading.Usage += _randomisedValueProvider.GenerateRandomReading();
+        }
+    }
+
+    /* Clock Code */
+    private void StartClock() //fix later
+    {
+        var timer = new System.Timers.Timer(60000);
         timer.Elapsed += Timer_Elapsed;
         timer.Start();
         UpdateTimeDisplay();
-    }
-
-    private void RandomReadingTimer()
-    {
-        timer = new System.Timers.Timer(_randomisedValueProvider.GenerateRandomTimeDelay());
-        timer.Elapsed += RandomTimer_Elapsed;
-        timer.Start();
     }
 
     private void Timer_Elapsed(object sender, ElapsedEventArgs e)
@@ -55,15 +117,12 @@ public partial class MainPage : ContentPage
         MainThread.BeginInvokeOnMainThread(UpdateTimeDisplay);
     }
 
-    private void RandomTimer_Elapsed(object sender, ElapsedEventArgs e)
-    {
-        _serverRequestHandler.CreateRequest(initialReading, RequestType.CurrentUsage, tariffType,billingPeriod,standingCharge);
-    }
-
     private void UpdateTimeDisplay()
     {
         TimeDisplay.Text = DateTime.Now.ToString("HH:mm");
     }
+
+    /* Clock Code End */
 
     private void OnTabClicked(object sender, EventArgs e)
     {
@@ -82,29 +141,18 @@ public partial class MainPage : ContentPage
             switch (clickedButton.Text)
             {
                 case "Current Usages":
-                    UsageCost.Text = $"£{MeterReading.Cost}";
-                    UsageKW.Text = $"{MeterReading.Usage}KW";
+                    UsageCost.Text = $"£{CurrentMeterReading.Cost}";
+                    UsageKW.Text = $"{CurrentMeterReading.Usage}KW";
                     break;
                 case "Today's Usage":
-                    UsageCost.Text = initialReading.ToString();
-                    UsageKW.Text = "18.7KW";
-                     _serverRequestHandler.CreateRequest(initialReading, RequestType.TodaysUsage, tariffType, billingPeriod:90,standingCharge:15);
-                    MeterReading.Cost = _serverRequestHandler.GetResponse();
-
+                    UsageCost.Text = $"£{DailyMeterReading.Cost}";
+                    UsageKW.Text = $"{DailyMeterReading.Usage}KW";
                     break;
                 case "Week Usage":
-                    UsageCost.Text = "£1.82";
-                    UsageKW.Text = "18.7KW";
+                    UsageCost.Text = $"£{WeeklyMeterReading.Cost}";
+                    UsageKW.Text = $"{WeeklyMeterReading.Usage}KW";
                     break;
             }
-
         }
-    }
-
-    protected override void OnDisappearing()
-    {
-        base.OnDisappearing();
-        timer?.Stop();
-        timer?.Dispose();
     }
 }
