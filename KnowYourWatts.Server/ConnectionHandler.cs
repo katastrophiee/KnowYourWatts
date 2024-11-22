@@ -135,7 +135,7 @@ public sealed class ConnectionHandler(
             //Calculate the cost of the electricity used
             var calculatedCost = _calculationProvider.CalculateCost(calculateCostRequest);
 
-            return new(calculatedCost);
+            return calculatedCost;
         }
         catch (Exception ex)
         {
