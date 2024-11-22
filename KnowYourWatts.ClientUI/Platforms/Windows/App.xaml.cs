@@ -18,7 +18,26 @@ namespace KnowYourWatts.ClientUI.WinUI
         {
             this.InitializeComponent();
         }
+        protected override void OnLaunched(LaunchActivatedEventArgs args)
+        {
+            base.OnLaunched(args); // Call base to ensure proper initialization
 
+            // Create a new MauiApp instance
+            var mauiApp = CreateMauiApp();
+            var services = mauiApp.Services;
+
+            // Get the IApplication instance from the services
+            var application = services.GetRequiredService<IApplication>();
+
+            // Create a new window for this instance
+            var newWindow = application.CreateWindow(null);
+
+            // Ensure the new window is properly activated
+            if (newWindow?.Handler?.PlatformView is Microsoft.UI.Xaml.Window window)
+            {
+                window.Activate();
+            }
+        }
         protected override MauiApp CreateMauiApp() => MauiProgram.CreateMauiApp();
     }
 
