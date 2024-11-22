@@ -1,19 +1,19 @@
-﻿using KnowYourWatts.Server.DTO.Response;
-
-namespace KnowYourWatts.Server.DTO.Response;
+﻿namespace KnowYourWatts.Server.DTO.Responses;
 
 public class CalculationResponse
 {
-    public SmartMeterCalculationResponse CalculationData { get; set; }
-    public string Error { get; set; }
+    public decimal? Cost { get; set; }
 
-    public CalculationResponse(SmartMeterCalculationResponse data)
+    public string? ErrorMessage { get; set; }
+
+    public CalculationResponse(decimal cost)
     {
-        CalculationData = data;
+        Cost = cost;
     }
 
-    public CalculationResponse(string error)
+    public CalculationResponse(string errorMessage)
     {
-        Error = error;
+        ErrorMessage = errorMessage;
     }
 }
+;
