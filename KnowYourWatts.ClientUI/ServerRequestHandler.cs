@@ -14,6 +14,7 @@ public class ServerRequestHandler(
 {   
     private readonly IRandomisedValueProvider _randomisedValueProvider = randomisedValueProvider;
     private readonly ClientSocket ClientSocket = clientSocket;
+    private string PublicKey;
 
     public async Task<SmartMeterCalculationResponse> SendRequestToServer(
         decimal initialReading,
@@ -36,6 +37,39 @@ public class ServerRequestHandler(
         await SendRequest(mpan, requestType, currentUsageRequest);
 
         return await HandleServerResponse(currentUsageRequest.CurrentReading);
+    }
+
+    public async Task GetPublicKey(string mpan)
+    {
+        await ClientSocket.ConnectClientToServer();
+
+        var request = new ServerRequest
+        {
+            Mpan = mpan,
+            RequestType = RequestType.PublicKey,
+            Data = ""
+        };
+
+        byte[] data = Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(request));
+
+        await ClientSocket.Socket!.SendAsync(data);
+
+        byte[] buffer = new byte[1024];
+        var bytesReceived = await ClientSocket.Socket.ReceiveAsync(buffer);
+
+        var response = Encoding.ASCII.GetString(buffer, 0, bytesReceived);
+
+        PublicKey = response;
+
+        if (response is null)
+        {
+            //return new();
+            // change to error in future
+        }
+
+        ClientSocket.Socket.Shutdown(SocketShutdown.Both);
+
+        //return response;
     }
 
 

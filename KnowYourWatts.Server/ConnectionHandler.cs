@@ -5,6 +5,7 @@ using System.Text;
 using KnowYourWatts.Server.DTO.Requests;
 using KnowYourWatts.Server.DTO.Enums;
 using KnowYourWatts.Server.DTO.Responses;
+using System.Net.WebSockets;
 
 namespace KnowYourWatts.Server;
 
@@ -66,10 +67,17 @@ public sealed class ConnectionHandler(
                 return;
             }
 
-            //remove once client is implemented
-            var encryptedMpan = _keyHandler.EncryptData(Encoding.UTF8.GetBytes(request.Mpan), _keyHandler.PublicKey);
+            //if (request.EncryptedMpan.Length == 0)
+            //{
+            //    var reponse = Encoding.ASCII.GetBytes(SerializeErrorResponse("BOOOOOO"));
+            //    handler.Send(reponse);
+            //    return;
+            //}
 
-            request.EncryptedMpan = encryptedMpan;
+            //remove once client is implemented
+            //var encryptedMpan = _keyHandler.EncryptData(Encoding.UTF8.GetBytes(request.Mpan), _keyHandler.PublicKey);
+
+            //request.EncryptedMpan = encryptedMpan;
             //end
 
             var decryptedMpan = _keyHandler.DecryptClientMpan(request.EncryptedMpan);

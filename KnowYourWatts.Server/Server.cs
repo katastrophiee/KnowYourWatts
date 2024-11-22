@@ -7,25 +7,23 @@ namespace KnowYourWatts.Server;
 public sealed class Server(
     IConnectionHandler connectionHandler,
     IKeyHandler keyHandler,
-    IPHostEntry host,
+    //IPHostEntry host,
     IPAddress ipAddress,
     IPEndPoint localEndPoint)
 {
     private readonly IConnectionHandler _connectionHandler = connectionHandler;
     private readonly IKeyHandler _keyHandler = keyHandler;
-    private readonly IPHostEntry Host = host;
-    private readonly IPAddress IpAddress = ipAddress;
-    private readonly IPEndPoint LocalEndPoint = localEndPoint;
+    //private readonly IPHostEntry Host = host;
     private readonly bool RunServer = true;
 
     public void Start()
     {
         try
         {
-            var listener = new Socket(_ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            listener.Bind(_localEndPoint);
+            var listener = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            listener.Bind(localEndPoint);
             listener.Listen(30);
-            Console.WriteLine($"Server started at {_localEndPoint.Address}:{_localEndPoint.Port}");
+            Console.WriteLine($"Server started at {localEndPoint.Address}:{localEndPoint.Port}");
 
             while (RunServer)
             {

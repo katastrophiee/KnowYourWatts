@@ -49,6 +49,7 @@ public partial class MainPage : ContentPage
 
         //Generate the unique identifier for the client
         Mpan = _randomisedValueProvider.GenerateMpanForClient();
+        _serverRequestHandler.GetPublicKey(Mpan);
 
         InitializeComponent();
         
