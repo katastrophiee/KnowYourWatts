@@ -40,7 +40,7 @@ public class ServerRequestHandler(
         return await HandleServerResponse(currentUsageRequest.CurrentReading);
     }
 
-    public byte[] EncryptMpan(string mpan)
+    public byte[] EncryptMpanWithPublicKey(string mpan)
     {
         try
         {
@@ -85,7 +85,7 @@ public class ServerRequestHandler(
             // change to error in future
         }
 
-        byte[] encryptedMpan = EncryptMpan(response);
+        byte[] encryptedMpan = EncryptMpanWithPublicKey(response);
 
         ClientSocket.Socket.Shutdown(SocketShutdown.Both);
 
