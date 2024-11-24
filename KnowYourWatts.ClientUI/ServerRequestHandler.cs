@@ -4,6 +4,7 @@ using KnowYourWatts.ClientUI.DTO.Response;
 using KnowYourWatts.ClientUI.Interfaces;
 using Newtonsoft.Json;
 using System.Net.Sockets;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace KnowYourWatts.ClientUI;
@@ -39,6 +40,23 @@ public class ServerRequestHandler(
         return await HandleServerResponse(currentUsageRequest.CurrentReading);
     }
 
+    public byte[] EncryptMpan(string mpan)
+    {
+        try
+        {
+            using (var rsa = new RSACryptoServiceProvider())
+            {
+                byte[] bytes = Encoding.ASCII.GetBytes(mpan);
+                rsa.ImportRSAPublicKey(Convert.FromBase64String(PublicKey), out _);
+                return rsa.Encrypt(bytes, RSAEncryptionPadding.Pkcs1);
+            }
+        }
+        catch
+        {
+            throw new CryptographicException("The encryption operation failed.");
+        }
+    }
+
     public async Task GetPublicKey(string mpan)
     {
         await ClientSocket.ConnectClientToServer();
@@ -66,6 +84,8 @@ public class ServerRequestHandler(
             //return new();
             // change to error in future
         }
+
+        byte[] encryptedMpan = EncryptMpan(response);
 
         ClientSocket.Socket.Shutdown(SocketShutdown.Both);
 
