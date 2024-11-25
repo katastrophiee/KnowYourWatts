@@ -67,13 +67,12 @@ public sealed class ConnectionHandler(
                 return;
             }
 
-            // Doesn't work
-            //if (request.EncryptedMpan.Length == 0)
-            //{
-            //    var reponse = Encoding.ASCII.GetBytes(SerializeErrorResponse("BOOOOOO"));
-            //    handler.Send(reponse);
-            //    return;
-            //}
+            if (request.EncryptedMpan.Length == 0)
+            {
+                var reponse = Encoding.ASCII.GetBytes(SerializeErrorResponse("BOOOOOO"));
+                handler.Send(reponse);
+                return;
+            }
             //end
 
             var decryptedMpan = _keyHandler.DecryptClientMpan(request.EncryptedMpan);

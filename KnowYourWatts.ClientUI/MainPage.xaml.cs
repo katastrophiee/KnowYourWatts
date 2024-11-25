@@ -22,10 +22,11 @@ public partial class MainPage : ContentPage
     private string PublicKey;
     private byte[] EncryptedMpan;
 
-    public MainPage(IRandomisedValueProvider randomisedValueProvider, IServerRequestHandler serverRequestHandler)
+    public MainPage(IRandomisedValueProvider randomisedValueProvider, IServerRequestHandler serverRequestHandler, IEncryptionHelper encryptionHelper)
     {
         _randomisedValueProvider = randomisedValueProvider;
         _serverRequestHandler = serverRequestHandler;
+        _encryptionHelper = encryptionHelper;
 
         CurrentMeterReading = new()
         {
@@ -53,10 +54,8 @@ public partial class MainPage : ContentPage
 
         //Generate the unique identifier for the client
         Mpan = _randomisedValueProvider.GenerateMpanForClient();
-        // .Result forces synchronous execution, NOT TO BE USED IN FINAL BUILD. IMPLEMENTED AS A FIX FOR TESTING ONLY. SOLUTION TO BE FOUND.
-        PublicKey = _serverRequestHandler.GetPublicKey(Mpan).Result;
-        EncryptedMpan = _encryptionHelper.EncryptData(Encoding.ASCII.GetBytes(Mpan), PublicKey);
-        Console.WriteLine(EncryptedMpan);
+
+        //Console.WriteLine(EncryptedMpan);
 
         InitializeComponent();
         

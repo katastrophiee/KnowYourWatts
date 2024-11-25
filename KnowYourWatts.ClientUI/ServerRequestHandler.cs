@@ -11,10 +11,12 @@ namespace KnowYourWatts.ClientUI;
 
 public class ServerRequestHandler(
     IRandomisedValueProvider randomisedValueProvider,
-    ClientSocket clientSocket): IServerRequestHandler
+    ClientSocket clientSocket,
+    IEncryptionHelper encryptionHelper): IServerRequestHandler
 {   
     private readonly IRandomisedValueProvider _randomisedValueProvider = randomisedValueProvider;
     private readonly ClientSocket ClientSocket = clientSocket;
+    private readonly IEncryptionHelper _encryptionHelper = encryptionHelper;
     private string PublicKey;
 
     public async Task<SmartMeterCalculationResponse> SendRequestToServer(
@@ -36,7 +38,7 @@ public class ServerRequestHandler(
 
         //initialReading += _randomisedValueProvider.GenerateRandomReading();
 
-        await SendRequest(mpan, encryptedMpan, requestType, currentUsageRequest);
+        await SendRequest(mpan, requestType, currentUsageRequest);
 
         return await HandleServerResponse(currentUsageRequest.CurrentReading);
     }
@@ -44,7 +46,7 @@ public class ServerRequestHandler(
     public async Task<string> GetPublicKey(string mpan)
     {
         await ClientSocket.ConnectClientToServer();
-
+        // Creates a public key request
         var request = new ServerRequest
         {
             Mpan = mpan,
@@ -56,14 +58,15 @@ public class ServerRequestHandler(
         byte[] data = Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(request));
 
         await ClientSocket.Socket!.SendAsync(data);
-
+        // Receives public key as a response
         byte[] buffer = new byte[1024];
         var bytesReceived = await ClientSocket.Socket.ReceiveAsync(buffer);
         Console.WriteLine(bytesReceived);
-
+        // Deserialzes response to get public key
         var response = Encoding.ASCII.GetString(buffer, 0, bytesReceived);
-
-        PublicKey = response;
+        var deserializedResponse = JsonConvert.DeserializeObject<string>(response) ?? "";
+        // Set public key
+        PublicKey = deserializedResponse;
         Console.WriteLine(PublicKey);
 
         if (response is null)
@@ -80,12 +83,19 @@ public class ServerRequestHandler(
     }
 
 
-    private async Task SendRequest<T>(string mpan, byte[] encryptedMpan, RequestType requestType, T request) where T : IUsageRequest
+    private async Task SendRequest<T>(string mpan, RequestType requestType, T request) where T : IUsageRequest
     {
         try
         {
             // If the socket is null and the socket is not connected, throw an invalid operation exception (method cannot be performed).
             // Use this exception as you wish, this is a basic implementation.
+
+            if (string.IsNullOrEmpty(PublicKey))
+            {
+                await GetPublicKey(mpan);
+            }
+
+            var encryptedMpan = _encryptionHelper.EncryptData(Encoding.ASCII.GetBytes(mpan), PublicKey);
 
             await ClientSocket.ConnectClientToServer();
 
