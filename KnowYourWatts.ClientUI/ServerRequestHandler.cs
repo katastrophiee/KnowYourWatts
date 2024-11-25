@@ -70,8 +70,6 @@ public class ServerRequestHandler(
             // change to error in future
         }
 
-        byte[] encryptedMpan = EncryptMpanWithPublicKey(response);
-
         ClientSocket.Socket.Shutdown(SocketShutdown.Both);
 
         return PublicKey;
