@@ -18,103 +18,157 @@ public partial class MainPage : ContentPage
     private decimal StandingCharge;
     private string Mpan;
 
+    private DateTime LastUpdatedDate = DateTime.Now.Date;
+
+    private Button _activeTab = null!; // Reference to the active tab
+
     public MainPage(IRandomisedValueProvider randomisedValueProvider, IServerRequestHandler serverRequestHandler)
     {
         _randomisedValueProvider = randomisedValueProvider;
         _serverRequestHandler = serverRequestHandler;
 
+        _serverRequestHandler.ErrorMessage += ShowError;
+
         CurrentMeterReading = new()
         {
             Cost = 0,
-            Usage = _randomisedValueProvider.GenerateRandomReading()
+            Usage = 0
         };
 
         DailyMeterReading = new()
         {
             Cost = 0,
-            Usage = _randomisedValueProvider.GenerateRandomReading()
+            Usage = 0
         };
 
         WeeklyMeterReading = new()
         {
             Cost = 0,
-            Usage = _randomisedValueProvider.GenerateRandomReading()
+            Usage = 0
         };
 
-        //Generate initial Tariff Type
-        TariffType = (TariffType)Enum.ToObject(typeof(TariffType),_randomisedValueProvider.GenerateRandomTarrif());
-
-        //Generate initial Standing charge
+        TariffType = (TariffType)Enum.ToObject(typeof(TariffType), _randomisedValueProvider.GenerateRandomTarrif());
         StandingCharge = _randomisedValueProvider.GenerateRandomStandingCharge();
-
-        //Generate the unique identifier for the client
         Mpan = _randomisedValueProvider.GenerateMpanForClient();
 
         InitializeComponent();
-        
-        StartClock();
-        SendRandomCurrentReadingTimer();
+
+        SelectTab(CurrentUsageTab, "Current Usages");
+        StartClock(); // Start clock independently
+        StartRandomCurrentReadingTimer();
     }
 
-    private void SendRandomCurrentReadingTimer()
+    private void StartClock()
     {
-        var timer = new System.Timers.Timer()
+        var clockTimer = new System.Timers.Timer(1000) { AutoReset = true };
+        clockTimer.Elapsed += (sender, e) =>
         {
-            AutoReset = false
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                UpdateTimeDisplay();
+                CheckAndUpdateDailyUsage();
+            });
+        };
+        clockTimer.Start();
+    }
+
+    private void StartRandomCurrentReadingTimer()
+    {
+        var timer = new System.Timers.Timer
+        {
+            Interval = 1000,
+            AutoReset = true
         };
 
         timer.Elapsed += async (sender, e) =>
         {
-            // Stop the timer while the request to the server is being sent
-            timer.Stop();
-
-            await SendReadingToServer();
-
-            timer.Interval = 1000;
-            //timer.Interval = _randomisedValueProvider.GenerateRandomTimeDelay();
-            timer.Start();
+            await MainThread.InvokeOnMainThreadAsync(async () =>
+            {
+                await SendReadingToServer();
+            });
         };
 
-        timer.Interval = 1000;
-        //timer.Interval = _randomisedValueProvider.GenerateRandomTimeDelay();
         timer.Start();
     }
 
-    // change to be modular and have seperate functions and timers for each req type
     private async Task SendReadingToServer()
     {
-        var response = await _serverRequestHandler.SendRequestToServer(
-            CurrentMeterReading.Usage,
-            RequestType.CurrentUsage,
-            TariffType,
-            1 /*BillingPeriod*/, //billing period should be retireved from the page we're sending the request from
-            StandingCharge,
-            Mpan
-        );
+        try
+        {
+            var response = await _serverRequestHandler.SendRequestToServer(
+                CurrentMeterReading.Usage,
+                RequestType.CurrentUsage,
+                TariffType,
+                1, // BillingPeriod
+                StandingCharge,
+                Mpan
+            );
 
-        if (!string.IsNullOrEmpty(response.ErrorMessage))
-        {
-            //show error on error page
+            if (response is null)
+            {
+                ShowError("No response was received from the server.");
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(response.ErrorMessage))
+            {
+                ShowError(response.ErrorMessage);
+                return;
+            }
+
+            else if (response.Cost is not null)
+            {
+                CurrentMeterReading.Cost += response.Cost.Value;
+
+                //move at some point
+                CurrentMeterReading.Usage += _randomisedValueProvider.GenerateRandomReading();
+
+                await MainThread.InvokeOnMainThreadAsync(() =>
+                {
+                    RefreshActiveTab(); // Refresh the active tab only
+                });
+            }
         }
-        else if (response.Cost is not null)
+        catch (Exception ex)
         {
-            CurrentMeterReading.Cost += response.Cost.Value;
-            CurrentMeterReading.Usage += _randomisedValueProvider.GenerateRandomReading();
+            ShowError(ex.Message);
         }
     }
 
-    /* Clock Code */
-    private void StartClock() //fix later
+    private void RefreshActiveTab()
     {
-        var timer = new System.Timers.Timer(60000);
-        timer.Elapsed += Timer_Elapsed;
-        timer.Start();
-        UpdateTimeDisplay();
+        if (_activeTab == CurrentUsageTab)
+        {
+            UsageCost.Text = $"£{CurrentMeterReading.Cost}";
+            UsageKW.Text = $"{CurrentMeterReading.Usage}KW";
+        }
+        else if (_activeTab == TodayUsageTab)
+        {
+            UsageCost.Text = $"£{DailyMeterReading.Cost}";
+            UsageKW.Text = $"{DailyMeterReading.Usage}KW";
+        }
+        else if (_activeTab == WeekUsageTab)
+        {
+            UsageCost.Text = $"£{WeeklyMeterReading.Cost}";
+            UsageKW.Text = $"{WeeklyMeterReading.Usage}KW";
+        }
     }
 
-    private void Timer_Elapsed(object sender, ElapsedEventArgs e)
+    private void CheckAndUpdateDailyUsage()
     {
-        MainThread.BeginInvokeOnMainThread(UpdateTimeDisplay);
+        var currentDate = DateTime.Now.Date;
+        if (currentDate > LastUpdatedDate)
+        {
+            LastUpdatedDate = currentDate;
+
+            DailyMeterReading = new MeterReadings
+            {
+                Cost = 0,
+                Usage = _randomisedValueProvider.GenerateRandomReading()
+            };
+
+            MainThread.BeginInvokeOnMainThread(() => RefreshActiveTab());
+        }
     }
 
     private void UpdateTimeDisplay()
@@ -122,37 +176,38 @@ public partial class MainPage : ContentPage
         TimeDisplay.Text = DateTime.Now.ToString("HH:mm");
     }
 
-    /* Clock Code End */
-
     private void OnTabClicked(object sender, EventArgs e)
     {
         if (sender is Button clickedButton)
         {
-            // Reset all tab backgrounds
-            CurrentUsageTab.BackgroundColor = Color.FromArgb("#323232");
-            TodayUsageTab.BackgroundColor = Color.FromArgb("#323232");
-            WeekUsageTab.BackgroundColor = Color.FromArgb("#323232");
-
-            // Set the clicked tab's background
-            clickedButton.BackgroundColor = Color.FromArgb("#345365");
-
-            
-            // Update content based on the selected tab
-            switch (clickedButton.Text)
-            {
-                case "Current Usages":
-                    UsageCost.Text = $"£{CurrentMeterReading.Cost}";
-                    UsageKW.Text = $"{CurrentMeterReading.Usage}KW";
-                    break;
-                case "Today's Usage":
-                    UsageCost.Text = $"£{DailyMeterReading.Cost}";
-                    UsageKW.Text = $"{DailyMeterReading.Usage}KW";
-                    break;
-                case "Week Usage":
-                    UsageCost.Text = $"£{WeeklyMeterReading.Cost}";
-                    UsageKW.Text = $"{WeeklyMeterReading.Usage}KW";
-                    break;
-            }
+            SelectTab(clickedButton, clickedButton.Text);
         }
     }
+
+    private void SelectTab(Button selectedButton, string tabName)
+    {
+        // Update active tab reference
+        _activeTab = selectedButton;
+
+        CurrentUsageTab.BackgroundColor = Color.FromArgb("#323232");
+        TodayUsageTab.BackgroundColor = Color.FromArgb("#323232");
+        WeekUsageTab.BackgroundColor = Color.FromArgb("#323232");
+
+        selectedButton.BackgroundColor = Color.FromArgb("#345365");
+
+        RefreshActiveTab(); // Update display for the selected tab
+    }
+
+    private void ShowError(string message)
+    {
+        ErrorMessage.Text = message;
+        ErrorOverlay.IsVisible = true;
+    }
+
+    private async void OnErrorDismissed(object sender, EventArgs e)
+    {
+        await ErrorOverlay.FadeTo(0, 250);
+        ErrorOverlay.IsVisible = false;
+    }
 }
+

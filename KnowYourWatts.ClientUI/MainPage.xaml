@@ -1,5 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
-<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+﻿<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="KnowYourWatts.ClientUI.MainPage"
              BackgroundColor="#585858">
@@ -18,52 +17,95 @@
         </Style>
     </ContentPage.Resources>
 
-    <Grid RowDefinitions="Auto,*">
-        <!-- Time display -->
-        <Label x:Name="TimeDisplay"
-               Grid.Row="0"
-               BackgroundColor="#323232"
-               TextColor="White"
-               FontSize="18"
-               FontAttributes="Bold"
-               Padding="10"
-               HorizontalTextAlignment="Center" />
-
-        <!-- Tab Control equivalent -->
-        <Grid Grid.Row="1" Margin="5" BackgroundColor="#323232">
+    <Grid RowDefinitions="*,Auto">
+        <!-- Main Content -->
+        <Grid x:Name="MainContent">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <!-- Tab headers -->
-            <Grid Grid.Row="0" ColumnDefinitions="*,*,*">
-                <Button x:Name="CurrentUsageTab" Text="Current Usages" Style="{StaticResource TabButtonStyle}" Clicked="OnTabClicked" Grid.Column="0" />
-                <Button x:Name="TodayUsageTab" Text="Today's Usage" Style="{StaticResource TabButtonStyle}" Clicked="OnTabClicked" Grid.Column="1" />
-                <Button x:Name="WeekUsageTab" Text="Week Usage" Style="{StaticResource TabButtonStyle}" Clicked="OnTabClicked" Grid.Column="2" />
-            </Grid>
+            <!-- Time display -->
+            <Label x:Name="TimeDisplay"
+                   Grid.Row="0"
+                   BackgroundColor="#323232"
+                   TextColor="White"
+                   FontSize="18"
+                   FontAttributes="Bold"
+                   Padding="10"
+                   HorizontalTextAlignment="Center" />
 
-            <!-- Tab content -->
-            <Grid Grid.Row="1" x:Name="TabContent" Padding="10">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
+            <!-- Tab Control -->
+            <Grid Grid.Row="1" Margin="5" BackgroundColor="#323232">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
 
-                <StackLayout Grid.Column="0" Margin="10">
-                    <Label Text="Usage:" FontAttributes="Bold" Style="{StaticResource UsageTextStyle}" />
-                    <Label x:Name="UsageCost" Text="£0.00" Style="{StaticResource UsageTextStyle}" />
-                    <Label x:Name="UsageKW" Text="00.0KW" Style="{StaticResource UsageTextStyle}" />
-                </StackLayout>
+                <!-- Tab headers -->
+                <Grid Grid.Row="0" ColumnDefinitions="*,*,*">
+                    <Button x:Name="CurrentUsageTab" Text="Current Usages" Style="{StaticResource TabButtonStyle}" Clicked="OnTabClicked" Grid.Column="0" />
+                    <Button x:Name="TodayUsageTab" Text="Today's Usage" Style="{StaticResource TabButtonStyle}" Clicked="OnTabClicked" Grid.Column="1" />
+                    <Button x:Name="WeekUsageTab" Text="Week Usage" Style="{StaticResource TabButtonStyle}" Clicked="OnTabClicked" Grid.Column="2" />
+                </Grid>
 
-                <Image Grid.Column="1" 
-                       Source="lightning.png"
-                       HeightRequest="60"
-                       WidthRequest="50"
-                       HorizontalOptions="End"
-                       VerticalOptions="Start" />
+                <!-- Tab content -->
+                <Grid Grid.Row="1" x:Name="TabContent" Padding="10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackLayout Grid.Column="0" Margin="10">
+                        <Label Text="Usage:" FontAttributes="Bold" Style="{StaticResource UsageTextStyle}" />
+                        <Label x:Name="UsageCost" Text="£0.00" Style="{StaticResource UsageTextStyle}" />
+                        <Label x:Name="UsageKW" Text="00.0KW" Style="{StaticResource UsageTextStyle}" />
+                    </StackLayout>
+
+                    <Image Grid.Column="1" 
+                           Source="lightning.png"
+                           HeightRequest="60"
+                           WidthRequest="50"
+                           HorizontalOptions="End"
+                           VerticalOptions="Start" />
+                </Grid>
             </Grid>
         </Grid>
-    </Grid>
 
+        <!-- Error Overlay -->
+        <Grid x:Name="ErrorOverlay" BackgroundColor="#80000000" IsVisible="False" Grid.Row="0" Grid.RowSpan="2">
+            <Grid.Resources>
+                <Style x:Key="ErrorTextStyle" TargetType="Label">
+                    <Setter Property="TextColor" Value="#333333" />
+                    <Setter Property="HorizontalTextAlignment" Value="Center" />
+                </Style>
+            </Grid.Resources>
+
+            <Frame CornerRadius="10" 
+           BackgroundColor="#F0F0F0" 
+           WidthRequest="300" 
+           HeightRequest="200"
+           HorizontalOptions="Center" 
+           VerticalOptions="Center"
+           HasShadow="True">
+                <StackLayout Spacing="15">
+                    <Label Text="An error occurred" 
+                   TextColor="#FF424242" 
+                   FontAttributes="Bold" 
+                   FontSize="18" 
+                   Style="{StaticResource ErrorTextStyle}" />
+                    <Label x:Name="ErrorMessage" 
+                   Text="" 
+                   Style="{StaticResource ErrorTextStyle}" />
+                    <Button Text="Dismiss" 
+                    Clicked="OnErrorDismissed" 
+                    HorizontalOptions="Center"
+                    BackgroundColor="#FF424242"
+                    TextColor="White"
+                    CornerRadius="5"
+                    WidthRequest="100" />
+                </StackLayout>
+            </Frame>
+        </Grid>
+    </Grid>
 </ContentPage>
