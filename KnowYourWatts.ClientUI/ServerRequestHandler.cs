@@ -10,12 +10,13 @@ namespace KnowYourWatts.ClientUI;
 
 public class ServerRequestHandler(
     IRandomisedValueProvider randomisedValueProvider,
-    ClientSocket clientSocket): IServerRequestHandler
-{   
-    private readonly IRandomisedValueProvider _randomisedValueProvider = randomisedValueProvider;
+    ClientSocket clientSocket) : IServerRequestHandler
+{
     private readonly ClientSocket ClientSocket = clientSocket;
+    private readonly IRandomisedValueProvider _randomisedValueProvider = randomisedValueProvider;
+    public event Action<string> ErrorMessage;
 
-    public async Task<SmartMeterCalculationResponse> SendRequestToServer(
+    public async Task<SmartMeterCalculationResponse?> SendRequestToServer(
         decimal initialReading,
         RequestType requestType,
         TariffType tariffType,
@@ -23,6 +24,7 @@ public class ServerRequestHandler(
         decimal standingCharge,
         string mpan)
     {
+
         var currentUsageRequest = new CurrentUsageRequest
         {
             TariffType = tariffType,
@@ -62,11 +64,11 @@ public class ServerRequestHandler(
         }
         catch (Exception ex)
         {
-            //error page
+            ErrorMessage.Invoke(ex.Message);
         }
     }
 
-    private async Task<SmartMeterCalculationResponse> HandleServerResponse(decimal currentCost)
+    private async Task<SmartMeterCalculationResponse?> HandleServerResponse(decimal currentCost)
     {
         try
         {
@@ -77,20 +79,20 @@ public class ServerRequestHandler(
 
             var response = JsonConvert.DeserializeObject<SmartMeterCalculationResponse>(receivedData);
 
+            ClientSocket.Socket.Shutdown(SocketShutdown.Both);
+
             if (response is null)
             {
-                return new();
-                // change to error in future
+                ErrorMessage.Invoke("No response was received from the server.");
+                return null;
             }
-
-            ClientSocket.Socket.Shutdown(SocketShutdown.Both);
 
             return response;
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex);
-            return new();
+            ErrorMessage.Invoke(ex.Message);
+            return null;
         }
 
         //check the requestype

@@ -95,7 +95,7 @@
                    FontSize="18" 
                    Style="{StaticResource ErrorTextStyle}" />
                     <Label x:Name="ErrorMessage" 
-                   Text="Error details go here." 
+                   Text="" 
                    Style="{StaticResource ErrorTextStyle}" />
                     <Button Text="Dismiss" 
                     Clicked="OnErrorDismissed" 

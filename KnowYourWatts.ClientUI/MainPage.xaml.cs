@@ -27,22 +27,24 @@ public partial class MainPage : ContentPage
         _randomisedValueProvider = randomisedValueProvider;
         _serverRequestHandler = serverRequestHandler;
 
+        _serverRequestHandler.ErrorMessage += ShowError;
+
         CurrentMeterReading = new()
         {
             Cost = 0,
-            Usage = _randomisedValueProvider.GenerateRandomReading()
+            Usage = 0
         };
 
         DailyMeterReading = new()
         {
             Cost = 0,
-            Usage = _randomisedValueProvider.GenerateRandomReading()
+            Usage = 0
         };
 
         WeeklyMeterReading = new()
         {
             Cost = 0,
-            Usage = _randomisedValueProvider.GenerateRandomReading()
+            Usage = 0
         };
 
         TariffType = (TariffType)Enum.ToObject(typeof(TariffType), _randomisedValueProvider.GenerateRandomTarrif());
@@ -102,13 +104,23 @@ public partial class MainPage : ContentPage
                 Mpan
             );
 
+            if (response is null)
+            {
+                ShowError("No response was received from the server.");
+                return;
+            }
+
             if (!string.IsNullOrEmpty(response.ErrorMessage))
             {
-                await MainThread.InvokeOnMainThreadAsync(() => ShowError(response.ErrorMessage));
+                ShowError(response.ErrorMessage);
+                return;
             }
+
             else if (response.Cost is not null)
             {
                 CurrentMeterReading.Cost += response.Cost.Value;
+
+                //move at some point
                 CurrentMeterReading.Usage += _randomisedValueProvider.GenerateRandomReading();
 
                 await MainThread.InvokeOnMainThreadAsync(() =>
@@ -119,7 +131,7 @@ public partial class MainPage : ContentPage
         }
         catch (Exception ex)
         {
-            await MainThread.InvokeOnMainThreadAsync(() => ShowError($"Unexpected error: {ex.Message}"));
+            ShowError(ex.Message);
         }
     }
 
@@ -190,14 +202,6 @@ public partial class MainPage : ContentPage
     {
         ErrorMessage.Text = message;
         ErrorOverlay.IsVisible = true;
-    }
-
-    private async Task ShowErrorOverlay(string errorMessage)
-    {
-        ErrorMessage.Text = errorMessage;
-        ErrorOverlay.Opacity = 0;
-        ErrorOverlay.IsVisible = true;
-        await ErrorOverlay.FadeTo(1, 250);
     }
 
     private async void OnErrorDismissed(object sender, EventArgs e)
