@@ -18,16 +18,6 @@ namespace KnowYourWatts.ClientUI.WinUI
         {
             this.InitializeComponent();
         }
-        //protected override void OnLaunched(LaunchActivatedEventArgs args)
-        //{
-        //    base.OnLaunched(args);
-
-        //    // Custom logic to differentiate instances
-        //    if (args.Arguments != null)
-        //    {
-        //        // Use args.Arguments to pass instance-specific data
-        //    }
-        //}
         protected override MauiApp CreateMauiApp() => MauiProgram.CreateMauiApp();
     }
 
