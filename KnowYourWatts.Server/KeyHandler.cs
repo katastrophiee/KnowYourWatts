@@ -72,13 +72,6 @@ public sealed class KeyHandler : IKeyHandler
         }
     }
 
-    // Should this be moved to the client or kept here and called from the client?
-    public byte[] EncryptData(byte[] data, string publicKey)
-    {
-        CryptographyKey.ImportRSAPublicKey(Convert.FromBase64String(publicKey), out _);
-        return CryptographyKey.Encrypt(data, RSAEncryptionPadding.Pkcs1);
-    }
-
     private static void SaveKeyInContainer(string containerName)
     {
         // CspParameters only works on Windows? What is the alternative?

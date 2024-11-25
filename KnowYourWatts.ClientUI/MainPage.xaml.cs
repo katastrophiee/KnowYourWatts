@@ -1,6 +1,7 @@
 ﻿using KnowYourWatts.ClientUI.DTO.Enums;
 using KnowYourWatts.ClientUI.DTO.Models;
 using KnowYourWatts.ClientUI.Interfaces;
+using System.Text;
 using System.Timers;
 
 namespace KnowYourWatts.ClientUI;
@@ -13,10 +14,13 @@ public partial class MainPage : ContentPage
 
     readonly IRandomisedValueProvider _randomisedValueProvider;
     readonly IServerRequestHandler _serverRequestHandler;
+    readonly IEncryptionHelper _encryptionHelper;
 
     private TariffType TariffType;
     private decimal StandingCharge;
     private string Mpan;
+    private string PublicKey;
+    private byte[] EncryptedMpan;
 
     public MainPage(IRandomisedValueProvider randomisedValueProvider, IServerRequestHandler serverRequestHandler)
     {
@@ -49,7 +53,9 @@ public partial class MainPage : ContentPage
 
         //Generate the unique identifier for the client
         Mpan = _randomisedValueProvider.GenerateMpanForClient();
-        _serverRequestHandler.GetPublicKey(Mpan);
+        // .Result forces synchronous execution, NOT TO BE USED IN FINAL BUILD. IMPLEMENTED AS A FIX FOR TESTING ONLY. SOLUTION TO BE FOUND.
+        PublicKey = _serverRequestHandler.GetPublicKey(Mpan).Result;
+        EncryptedMpan = _encryptionHelper.EncryptData(Encoding.ASCII.GetBytes(Mpan), PublicKey);
 
         InitializeComponent();
         
@@ -90,7 +96,8 @@ public partial class MainPage : ContentPage
             TariffType,
             1 /*BillingPeriod*/, //billing period should be retireved from the page we're sending the request from
             StandingCharge,
-            Mpan
+            Mpan,
+            EncryptedMpan
         );
 
         if (!string.IsNullOrEmpty(response.ErrorMessage))

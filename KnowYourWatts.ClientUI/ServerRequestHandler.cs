@@ -22,7 +22,8 @@ public class ServerRequestHandler(
         TariffType tariffType,
         int billingPeriod,
         decimal standingCharge,
-        string mpan)
+        string mpan,
+        byte[] encryptedMpan)
     {
         var currentUsageRequest = new CurrentUsageRequest
         {
@@ -34,18 +35,19 @@ public class ServerRequestHandler(
 
         //initialReading += _randomisedValueProvider.GenerateRandomReading();
 
-        await SendRequest(mpan, requestType, currentUsageRequest);
+        await SendRequest(mpan, encryptedMpan, requestType, currentUsageRequest);
 
         return await HandleServerResponse(currentUsageRequest.CurrentReading);
     }
 
-    public async Task GetPublicKey(string mpan)
+    public async Task<string> GetPublicKey(string mpan)
     {
         await ClientSocket.ConnectClientToServer();
 
         var request = new ServerRequest
         {
             Mpan = mpan,
+            EncryptedMpan = Array.Empty<byte>(),
             RequestType = RequestType.PublicKey,
             Data = ""
         };
@@ -69,11 +71,13 @@ public class ServerRequestHandler(
 
         ClientSocket.Socket.Shutdown(SocketShutdown.Both);
 
+        return PublicKey;
+
         //return response;
     }
 
 
-    private async Task SendRequest<T>(string mpan, RequestType requestType, T request) where T : IUsageRequest
+    private async Task SendRequest<T>(string mpan, byte[] encryptedMpan, RequestType requestType, T request) where T : IUsageRequest
     {
         try
         {
@@ -86,6 +90,7 @@ public class ServerRequestHandler(
             var serverRequest = new ServerRequest
             {
                 Mpan = mpan,
+                EncryptedMpan = encryptedMpan,
                 RequestType = requestType,
                 Data = JsonConvert.SerializeObject(request)
             };
