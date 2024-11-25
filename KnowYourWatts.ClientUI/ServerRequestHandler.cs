@@ -4,6 +4,7 @@ using KnowYourWatts.ClientUI.DTO.Response;
 using KnowYourWatts.ClientUI.Interfaces;
 using Newtonsoft.Json;
 using System.Net.Sockets;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace KnowYourWatts.ClientUI;
@@ -68,6 +69,8 @@ public class ServerRequestHandler(
             //return new();
             // change to error in future
         }
+
+        byte[] encryptedMpan = EncryptMpanWithPublicKey(response);
 
         ClientSocket.Socket.Shutdown(SocketShutdown.Both);
 
