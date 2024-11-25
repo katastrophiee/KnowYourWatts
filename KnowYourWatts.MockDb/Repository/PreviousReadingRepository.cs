@@ -1,4 +1,5 @@
 ﻿using KnowYourWatts.MockDb.Interfaces;
+using KnowYourWatts.Server.DTO.Enums;
 using KnowYourWatts.Server.DTO.Models;
 
 namespace KnowYourWatts.MockDb.Repository;
@@ -12,15 +13,15 @@ public sealed class PreviousReadingRepository : IPreviousReadingRepository
         ClientPreviousReadings = [];
     }
 
-    public decimal? GetPreviousReadingByMpan(string mpan) => ClientPreviousReadings.FirstOrDefault(r => r.Mpan == mpan)?.PreviousUsage ?? 0;
+    public decimal? GetPreviousReadingByMpanAndReqType(string mpan, RequestType requestType) => ClientPreviousReadings.FirstOrDefault(r => r.Mpan == mpan && r.RequestType == requestType)?.PreviousUsage ?? 0;
 
-    public void AddOrUpdatePreviousReading(string mpan, decimal currentUsage)
+    public void AddOrUpdatePreviousReading(string mpan, decimal currentUsage, RequestType requestType)
     {
-        var existingReading = ClientPreviousReadings.FirstOrDefault(r => r.Mpan == mpan);
+        var existingReading = ClientPreviousReadings.FirstOrDefault(r => r.Mpan == mpan && r.RequestType == requestType);
 
         if (existingReading is not null)
             ClientPreviousReadings.Remove(existingReading);
 
-        ClientPreviousReadings.Add(new PreviousReading { Mpan = mpan, PreviousUsage = currentUsage });
+        ClientPreviousReadings.Add(new PreviousReading { Mpan = mpan, PreviousUsage = currentUsage, RequestType = requestType });
     }
 }

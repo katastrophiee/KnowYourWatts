@@ -6,7 +6,7 @@ namespace KnowYourWatts.ClientUI;
 
 public static class MauiProgram
 {
-    private static ClientSocket ClientSocket;
+    
 
     public static MauiApp CreateMauiApp()
     {
@@ -43,14 +43,25 @@ public static class MauiProgram
 
         try
         {
-            ClientSocket = new(
+           var currentClientSocket = new ClientSocket(
                 ipAddress,
                 remoteEndPoint
             );
+            var dailyClientSocket = new ClientSocket(
+               ipAddress,
+               remoteEndPoint
+           );
+            var weeklyClientSocket = new ClientSocket(
+               ipAddress,
+               remoteEndPoint
+           );
+
 
             //await ClientSocket.ConnectClientToServer();
 
-            builder.Services.AddSingleton(ClientSocket);
+            builder.Services.AddSingleton(currentClientSocket);
+            builder.Services.AddSingleton(dailyClientSocket);
+            builder.Services.AddSingleton(weeklyClientSocket);
         }
         catch (Exception ex)
         {

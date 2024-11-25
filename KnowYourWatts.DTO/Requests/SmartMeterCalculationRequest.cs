@@ -13,4 +13,5 @@ public class SmartMeterCalculationRequest
     public int BillingPeriod { get; set; }
 
     public decimal StandingCharge { get; set; }
+    public RequestType RequestType { get; set; }
 }

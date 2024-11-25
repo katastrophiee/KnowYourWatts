@@ -89,7 +89,7 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider) 
 
     private static string SerializeErrorResponse(string errorMessage) => JsonConvert.SerializeObject(new CalculationResponse(errorMessage));
 
-    private CalculationResponse CalculateUsage<T>(string mpan, T? request) where T : IUsageRequest
+    private CalculationResponse CalculateUsage<T>(string mpan, RequestType requestType, T? request) where T : IUsageRequest
     {
         try
         {
@@ -103,7 +103,8 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider) 
                 TariffType = request.TariffType,
                 CurrentReading = request.CurrentReading,
                 BillingPeriod = request.BillingPeriod,
-                StandingCharge = request.StandingCharge
+                StandingCharge = request.StandingCharge,
+                RequestType = requestType
             };
 
             //Calculate the cost of the electricity used
@@ -117,9 +118,9 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider) 
         }
     }
 
-    private CalculationResponse CalculateCurrentUsage(string mpan, CurrentUsageRequest? request) => CalculateUsage(mpan, request);
+    private CalculationResponse CalculateCurrentUsage(string mpan, CurrentUsageRequest? request) => CalculateUsage(mpan, RequestType.CurrentUsage, request);
 
-    private CalculationResponse CalculateDailyUsage(string mpan, DailyUsageRequest? request) => CalculateUsage(mpan, request);
+    private CalculationResponse CalculateDailyUsage(string mpan, DailyUsageRequest? request) => CalculateUsage(mpan, RequestType.TodaysUsage, request);
 
-    private CalculationResponse CalculateWeeklyUsage(string mpan, WeeklyUsageRequest? request) => CalculateUsage(mpan, request);
+    private CalculationResponse CalculateWeeklyUsage(string mpan, WeeklyUsageRequest? request) => CalculateUsage(mpan, RequestType.WeeklyUsage, request);
 }

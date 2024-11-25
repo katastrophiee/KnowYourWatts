@@ -61,11 +61,13 @@ public class ServerRequestHandler(
             byte[] data = Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(serverRequest));
 
             await ClientSocket.Socket!.SendAsync(data);
+            //ThreadPool.QueueUserWorkItem(state => _connectionHandler.HandleConnection(handler));
         }
         catch (Exception ex)
         {
             ErrorMessage.Invoke(ex.Message);
         }
+        //https://stackoverflow.com/questions/59186013/how-to-call-queue-client-sendasync-method-using-c-sharp
     }
 
     private async Task<SmartMeterCalculationResponse?> HandleServerResponse(decimal currentCost)
