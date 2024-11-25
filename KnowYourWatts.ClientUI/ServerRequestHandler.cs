@@ -59,10 +59,12 @@ public class ServerRequestHandler(
 
         byte[] buffer = new byte[1024];
         var bytesReceived = await ClientSocket.Socket.ReceiveAsync(buffer);
+        Console.WriteLine(bytesReceived);
 
         var response = Encoding.ASCII.GetString(buffer, 0, bytesReceived);
 
         PublicKey = response;
+        Console.WriteLine(PublicKey);
 
         if (response is null)
         {

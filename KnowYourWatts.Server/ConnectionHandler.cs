@@ -4,8 +4,8 @@ using System.Net.Sockets;
 using System.Text;
 using KnowYourWatts.Server.DTO.Requests;
 using KnowYourWatts.Server.DTO.Enums;
-using KnowYourWatts.Server.DTO.Responses;
 using System.Net.WebSockets;
+using KnowYourWatts.Server.DTO.Responses;
 
 namespace KnowYourWatts.Server;
 
@@ -27,7 +27,7 @@ public sealed class ConnectionHandler(
             if (!handler.Connected || handler.RemoteEndPoint is null)
             {
                 //We log an error to the console here as we are unable to respond to the client
-                Console.WriteLine("No target address for a response was provided from the recieved request.");
+                Console.WriteLine("No target address for a response was provided from the received request.");
                 return;
             }
             int bytesReceived = handler.Receive(buffer);

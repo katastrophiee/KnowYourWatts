@@ -56,6 +56,7 @@ public partial class MainPage : ContentPage
         // .Result forces synchronous execution, NOT TO BE USED IN FINAL BUILD. IMPLEMENTED AS A FIX FOR TESTING ONLY. SOLUTION TO BE FOUND.
         PublicKey = _serverRequestHandler.GetPublicKey(Mpan).Result;
         EncryptedMpan = _encryptionHelper.EncryptData(Encoding.ASCII.GetBytes(Mpan), PublicKey);
+        Console.WriteLine(EncryptedMpan);
 
         InitializeComponent();
         
