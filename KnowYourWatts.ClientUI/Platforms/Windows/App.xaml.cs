@@ -18,7 +18,7 @@ namespace KnowYourWatts.ClientUI.WinUI
         {
             this.InitializeComponent();
         }
-
+        
         protected override MauiApp CreateMauiApp() => MauiProgram.CreateMauiApp();
     }
 
