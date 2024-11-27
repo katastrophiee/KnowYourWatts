@@ -36,8 +36,6 @@ public class ServerRequestHandler(
             StandingCharge = standingCharge
         };
 
-        //initialReading += _randomisedValueProvider.GenerateRandomReading();
-
         await SendRequest(mpan, requestType, currentUsageRequest);
 
         return await HandleServerResponse(currentUsageRequest.CurrentReading);
@@ -45,41 +43,82 @@ public class ServerRequestHandler(
 
     public async Task<string> GetPublicKey(string mpan)
     {
-        await ClientSocket.ConnectClientToServer();
-        // Creates a public key request
-        var request = new ServerRequest
+        // If mpan is null or whitespace, throw error as empty MPAN is invalid
+        if (string.IsNullOrWhiteSpace(mpan))
         {
-            Mpan = mpan,
-            EncryptedMpan = Array.Empty<byte>(),
-            RequestType = RequestType.PublicKey,
-            Data = ""
-        };
-
-        byte[] data = Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(request));
-
-        await ClientSocket.Socket!.SendAsync(data);
-        // Receives public key as a response
-        byte[] buffer = new byte[1024];
-        var bytesReceived = await ClientSocket.Socket.ReceiveAsync(buffer);
-        Console.WriteLine(bytesReceived);
-        // Deserialzes response to get public key
-        var response = Encoding.ASCII.GetString(buffer, 0, bytesReceived);
-        var deserializedResponse = JsonConvert.DeserializeObject<string>(response) ?? "";
-        // Set public key
-        PublicKey = deserializedResponse;
-        Console.WriteLine(PublicKey);
-
-        if (response is null)
-        {
-            //return new();
-            // change to error in future
+            throw new ArgumentException("MPAN cannot be null or empty.");
         }
 
-        ClientSocket.Socket.Shutdown(SocketShutdown.Both);
+        try
+        {
+            // Wait for the socket to connect to the server
+            await ClientSocket.ConnectClientToServer();
 
-        return PublicKey;
+            // Creates a public key request
+            var request = new ServerRequest
+            {
+                Mpan = mpan,
+                EncryptedMpan = Array.Empty<byte>(),
+                RequestType = RequestType.PublicKey,
+                Data = ""
+            };
 
-        //return response;
+            byte[] data = Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(request));
+
+        await ClientSocket.Socket!.SendAsync(data);
+            // Receives public key as a response
+            byte[] buffer = new byte[1024];
+            var bytesReceived = await ClientSocket.Socket.ReceiveAsync(buffer);
+
+            if (bytesReceived == 0)
+            {
+                throw new Exception("No data received from server.");
+            }
+
+            // Deserialize the response
+            var response = Encoding.ASCII.GetString(buffer, 0, bytesReceived);
+            // If the response is null or whitespace, throw exception
+            if (string.IsNullOrWhiteSpace(response))
+            {
+                throw new Exception("Received an empty or invalid response from the server.");
+            }
+            // Deserialize the public key
+            var deserializedResponse = JsonConvert.DeserializeObject<string>(response) ?? "";
+            // If the deserialized response is null or whitespace, throw error as deserialization must have gone wrong
+            if (string.IsNullOrWhiteSpace(deserializedResponse))
+            {
+                throw new Exception("Response deserialization failed.");
+            }
+
+            // Set the public key
+            PublicKey = deserializedResponse;
+
+            return PublicKey;
+        }
+        // Catch SocketException if a socket error occurs in the try block
+        catch (SocketException ex)
+        {
+            throw new Exception("An error occurred while communicating with the server.", ex);
+        }
+        // Catch JsonException if an issue occurs with serialization or deserialization of request or response
+        catch (JsonException ex)
+        {;
+            throw new Exception("An error occurred while processing the server response.", ex);
+        }
+        // General exception handler block
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Unexpected error: {ex.Message}");
+            throw; // Re-throw the exception to notify the caller
+        }
+        // Final block to shut down the socket connection if it hasn't been shut already
+        finally
+        {
+            if (ClientSocket.Socket.Connected)
+            {
+                ClientSocket.Socket.Shutdown(SocketShutdown.Both);
+            }
+        }
     }
 
 
@@ -92,6 +131,8 @@ public class ServerRequestHandler(
 
             if (string.IsNullOrEmpty(PublicKey))
             {
+                // Add some kind of error handling here - if the server returns a null, will this just infinitely wait? If the GetPublicKey
+                // returns an error, how will it be handled?
                 await GetPublicKey(mpan);
             }
 
