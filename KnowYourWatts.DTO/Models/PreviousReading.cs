@@ -1,4 +1,6 @@
-﻿namespace KnowYourWatts.Server.DTO.Models;
+﻿using KnowYourWatts.Server.DTO.Enums;
+
+namespace KnowYourWatts.Server.DTO.Models;
 
 public sealed class PreviousReading
 {
@@ -7,4 +9,5 @@ public sealed class PreviousReading
     public decimal PreviousUsage { get; set; }
 
     public decimal TotalCost { get; set; }
+    public RequestType RequestType { get; set; }
 }

@@ -1,7 +1,7 @@
 ﻿using KnowYourWatts.ClientUI.DTO.Enums;
 using KnowYourWatts.ClientUI.DTO.Models;
+using KnowYourWatts.ClientUI.DTO.Response;
 using KnowYourWatts.ClientUI.Interfaces;
-using System.Timers;
 
 namespace KnowYourWatts.ClientUI;
 
@@ -56,6 +56,9 @@ public partial class MainPage : ContentPage
         SelectTab(CurrentUsageTab, "Current Usages");
         StartClock(); // Start clock independently
         StartRandomCurrentReadingTimer();
+        StartRandomDailyReadingTimer();
+        StartRandomWeeklyReadingTimer();
+
     }
 
     private void StartClock()
@@ -76,16 +79,76 @@ public partial class MainPage : ContentPage
     {
         var timer = new System.Timers.Timer
         {
-            Interval = 1000,
+            Interval = 1000,//_randomisedValueProvider.GenerateRandomTimeDelay(),
             AutoReset = true
         };
 
         timer.Elapsed += async (sender, e) =>
         {
-            await MainThread.InvokeOnMainThreadAsync(async () =>
+            /* await MainThread.InvokeOnMainThreadAsync(async () =>
+             {
+                 await SendReadingToServer();
+             });*/
+            await Task.Run(async () =>
             {
                 await SendReadingToServer();
             });
+            /* ThreadPool.QueueUserWorkItem(async _ =>
+             {
+                 await SendReadingToServer();
+             });*/
+        };
+
+        timer.Start();
+    }
+    private void StartRandomDailyReadingTimer()
+    {
+        var timer = new System.Timers.Timer
+        {
+            Interval = 1000,//_randomisedValueProvider.GenerateRandomTimeDelay(),
+            AutoReset = true
+        };
+
+        timer.Elapsed += async (sender, e) =>
+        {
+            /* await MainThread.InvokeOnMainThreadAsync(async () =>
+             {
+                 await SendReadingToServerDaily();
+             });*/
+            await Task.Run(async () =>
+            {
+                await SendReadingToServerDaily();
+            });
+            /*ThreadPool.QueueUserWorkItem(async _ =>
+            {
+                await SendReadingToServerDaily();
+            });*/
+        };
+
+        timer.Start();
+    }
+    private void StartRandomWeeklyReadingTimer()
+    {
+        var timer = new System.Timers.Timer
+        {
+            Interval = 1000,//_randomisedValueProvider.GenerateRandomTimeDelay(),
+            AutoReset = true
+        };
+
+        timer.Elapsed += async (sender, e) =>
+        {
+            /*await MainThread.InvokeOnMainThreadAsync(async () =>
+            {
+                await SendReadingToServerWeekly();
+            });*/
+            await Task.Run(async () =>
+            {
+                await SendReadingToServerWeekly();
+            });
+            /* ThreadPool.QueueUserWorkItem(async _ =>
+             {
+                 await SendReadingToServerWeekly();
+             });*/
         };
 
         timer.Start();
@@ -95,14 +158,16 @@ public partial class MainPage : ContentPage
     {
         try
         {
+
             var response = await _serverRequestHandler.SendRequestToServer(
-                CurrentMeterReading.Usage,
-                RequestType.CurrentUsage,
-                TariffType,
-                1, // BillingPeriod
-                StandingCharge,
-                Mpan
-            );
+               CurrentMeterReading.Usage,
+               RequestType.CurrentUsage,
+               TariffType,
+               1, // BillingPeriod
+               StandingCharge,
+               Mpan
+               );
+           
 
             if (response is null)
             {
@@ -122,6 +187,93 @@ public partial class MainPage : ContentPage
 
                 //move at some point
                 CurrentMeterReading.Usage += _randomisedValueProvider.GenerateRandomReading();
+
+                await MainThread.InvokeOnMainThreadAsync(() =>
+                {
+                    RefreshActiveTab(); // Refresh the active tab only
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowError(ex.Message);
+        }
+    }
+    private async Task SendReadingToServerDaily()
+    {
+        try
+        {
+            var response = await _serverRequestHandler.SendRequestToServer(
+                   DailyMeterReading.Usage,
+                   RequestType.TodaysUsage,
+                   TariffType,
+                   1, // BillingPeriod
+                   StandingCharge,
+                   Mpan
+               );
+     
+
+            if (response is null)
+            {
+                ShowError("No response was received from the server.");
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(response.ErrorMessage))
+            {
+                ShowError(response.ErrorMessage);
+                return;
+            }
+
+            else if (response.Cost is not null)
+            {
+                DailyMeterReading.Cost += response.Cost.Value;
+
+                //move at some point
+               DailyMeterReading.Usage += _randomisedValueProvider.GenerateRandomReading();
+
+                await MainThread.InvokeOnMainThreadAsync(() =>
+                {
+                    RefreshActiveTab(); // Refresh the active tab only
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowError(ex.Message);
+        }
+    }
+    private async Task SendReadingToServerWeekly()
+    {
+        try
+        {
+            var response = await _serverRequestHandler.SendRequestToServer(
+                   WeeklyMeterReading.Usage,
+                   RequestType.WeeklyUsage,
+                   TariffType,
+                   1, // BillingPeriod
+                   StandingCharge,
+                   Mpan
+               );
+
+            if (response is null)
+            {
+                ShowError("No response was received from the server.");
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(response.ErrorMessage))
+            {
+                ShowError(response.ErrorMessage);
+                return;
+            }
+
+            else if (response.Cost is not null)
+            {
+                WeeklyMeterReading.Cost += response.Cost.Value;
+
+                //move at some point
+                WeeklyMeterReading.Usage += _randomisedValueProvider.GenerateRandomReading();
 
                 await MainThread.InvokeOnMainThreadAsync(() =>
                 {

@@ -16,7 +16,7 @@ public sealed class CalculationProvider(
 
     public CalculationResponse CalculateCost(SmartMeterCalculationRequest request)
     {
-        var previousReading = _previousReadingRepository.GetPreviousReadingByMpan(request.Mpan);
+        var previousReading = _previousReadingRepository.GetPreviousReadingByMpanAndReqType(request.Mpan,request.RequestType);
 
         if (previousReading is not null && request.CurrentReading < previousReading)
             return new("Current energy reading cannot be less than previous energy reading.");
@@ -50,10 +50,10 @@ public sealed class CalculationProvider(
         var totalCost = Math.Round(totalCostWithVat, 2, MidpointRounding.AwayFromZero);
 
         //We pass the cost calculated here to the mock database to add it to the existing cost and save it
-        _costRepository.AddOrUpdateClientTotalCost(request.Mpan, totalCost);
+        _costRepository.AddOrUpdateClientTotalCost(request.Mpan, totalCost,request.RequestType);
 
         //We need to save the a new previous reading to the mock database for the next time we calculate the cost
-        _previousReadingRepository.AddOrUpdatePreviousReading(request.Mpan, request.CurrentReading);
+        _previousReadingRepository.AddOrUpdatePreviousReading(request.Mpan, request.CurrentReading,request.RequestType);
 
         return new CalculationResponse(totalCost);
     }
