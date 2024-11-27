@@ -7,5 +7,6 @@ public class ClientCost
     public string Mpan { get; set; }
 
     public decimal TotalCost { get; set; }
+
     public RequestType RequestType { get; set; }
 }

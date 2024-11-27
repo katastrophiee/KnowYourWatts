@@ -31,6 +31,7 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider) 
             //Check we received some data from the client
             if (bytesReceived == 0)
             {
+                Console.WriteLine("The request was received but it contained no data.");
                 var response = Encoding.ASCII.GetBytes(SerializeErrorResponse("The request was received but it contained no data."));
                 handler.Send(response);
                 return;
@@ -44,6 +45,7 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider) 
 
             if (request is null)
             {
+                Console.WriteLine("The request did not contain any data when converted to an object.");
                 var response = Encoding.ASCII.GetBytes(SerializeErrorResponse("The request did not contain any data when converted to an object."));
                 handler.Send(response);
                 return;
@@ -51,6 +53,7 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider) 
 
             if (string.IsNullOrEmpty(request.Mpan))
             {
+                Console.WriteLine("No MPAN was provided with the request.");
                 var response = Encoding.ASCII.GetBytes(SerializeErrorResponse("No MPAN was provided with the request."));
                 handler.Send(response);
                 return;
@@ -64,6 +67,9 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider) 
                 RequestType.WeeklyUsage => CalculateWeeklyUsage(request.Mpan, JsonConvert.DeserializeObject<WeeklyUsageRequest>(request.Data)),
                 _ => new($"The request type {request.RequestType} was not recognized.")
             };
+
+            if (!string.IsNullOrEmpty(calculationResponse.ErrorMessage))
+                Console.WriteLine(calculationResponse.ErrorMessage);
 
             //We put the response object into JSON and send it back to the client
             handler.Send(Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(calculationResponse)));
@@ -102,6 +108,7 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider) 
                 Mpan = mpan,
                 TariffType = request.TariffType,
                 CurrentReading = request.CurrentReading,
+                CurrentCost = request.CurrentCost,
                 BillingPeriod = request.BillingPeriod,
                 StandingCharge = request.StandingCharge,
                 RequestType = requestType

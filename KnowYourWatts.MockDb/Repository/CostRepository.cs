@@ -15,7 +15,7 @@ public class CostRepository : ICostRepository
 
     public void AddOrUpdateClientTotalCost(string mpan, decimal additionalCost, RequestType requestType)
     {
-        var existingTotalCost = ClientCosts.FirstOrDefault(r => r.Mpan == mpan && r.RequestType == requestType );
+        var existingTotalCost = ClientCosts.FirstOrDefault(r => r != null && r.Mpan == mpan && r.RequestType == requestType );
 
         var newTotalCost = additionalCost;
 
@@ -26,5 +26,12 @@ public class CostRepository : ICostRepository
         }
 
         ClientCosts.Add(new ClientCost { Mpan = mpan, TotalCost = newTotalCost, RequestType = requestType });
+    }
+
+    public decimal? GetPreviousTotalCostByMpanAndReqType(string mpan, RequestType requestType)
+    {
+        var previousReading = ClientCosts.FirstOrDefault(r => r != null && r.Mpan == mpan && r.RequestType == requestType);
+
+        return previousReading?.TotalCost;
     }
 }

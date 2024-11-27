@@ -31,21 +31,23 @@ public partial class MainPage : ContentPage
 
         CurrentMeterReading = new()
         {
-            Cost = 0,
-            Usage = 0
+            Cost = 0m,
+            Usage = 0m
         };
 
         DailyMeterReading = new()
         {
-            Cost = 0,
-            Usage = 0
+            Cost = 0m,
+            Usage = 0m
         };
 
         WeeklyMeterReading = new()
         {
-            Cost = 0,
-            Usage = 0
+            Cost = 0m,
+            Usage = 0m
         };
+
+        //we'll want the usage to go up by the same for each page, not have each one be individually calculated
 
         TariffType = (TariffType)Enum.ToObject(typeof(TariffType), _randomisedValueProvider.GenerateRandomTarrif());
         StandingCharge = _randomisedValueProvider.GenerateRandomStandingCharge();
@@ -58,7 +60,6 @@ public partial class MainPage : ContentPage
         StartRandomCurrentReadingTimer();
         StartRandomDailyReadingTimer();
         StartRandomWeeklyReadingTimer();
-
     }
 
     private void StartClock()
@@ -87,12 +88,13 @@ public partial class MainPage : ContentPage
         {
             await MainThread.InvokeOnMainThreadAsync(async () =>
             {
-                await SendReadingToServer();
+                await SendCurrentReadingToServer();
             });
         };
 
         timer.Start();
     }
+
     private void StartRandomDailyReadingTimer()
     {
         var timer = new System.Timers.Timer
@@ -111,6 +113,7 @@ public partial class MainPage : ContentPage
 
         timer.Start();
     }
+
     private void StartRandomWeeklyReadingTimer()
     {
         var timer = new System.Timers.Timer
@@ -130,15 +133,16 @@ public partial class MainPage : ContentPage
         timer.Start();
     }
 
-    private async Task SendReadingToServer()
+    private async Task SendCurrentReadingToServer()
     {
         try
         {
             var response = await _serverRequestHandler.SendRequestToServer(
                 CurrentMeterReading.Usage,
+                CurrentMeterReading.Cost,
                 RequestType.CurrentUsage,
                 TariffType,
-                1, // BillingPeriod
+                1,
                 StandingCharge,
                 Mpan
             );
@@ -162,26 +166,26 @@ public partial class MainPage : ContentPage
                 //move at some point
                 CurrentMeterReading.Usage += _randomisedValueProvider.GenerateRandomReading();
 
-                await MainThread.InvokeOnMainThreadAsync(() =>
-                {
-                    RefreshActiveTab(); // Refresh the active tab only
-                });
             }
+               
+            await MainThread.InvokeOnMainThreadAsync(RefreshActiveTab);
         }
         catch (Exception ex)
         {
             ShowError(ex.Message);
         }
     }
+
     private async Task SendReadingToServerDaily()
     {
         try
         {
             var response = await _serverRequestHandler.SendRequestToServer(
                 DailyMeterReading.Usage,
+                DailyMeterReading.Cost,
                 RequestType.TodaysUsage,
                 TariffType,
-                1, // BillingPeriod
+                1,
                 StandingCharge,
                 Mpan
             );
@@ -203,28 +207,27 @@ public partial class MainPage : ContentPage
                 DailyMeterReading.Cost += response.Cost.Value;
 
                 //move at some point
-               DailyMeterReading.Usage += _randomisedValueProvider.GenerateRandomReading();
-
-                await MainThread.InvokeOnMainThreadAsync(() =>
-                {
-                    RefreshActiveTab(); // Refresh the active tab only
-                });
+                DailyMeterReading.Usage += _randomisedValueProvider.GenerateRandomReading();
             }
+            
+            await MainThread.InvokeOnMainThreadAsync(RefreshActiveTab);
         }
         catch (Exception ex)
         {
             ShowError(ex.Message);
         }
     }
+
     private async Task SendReadingToServerWeekly()
     {
         try
         {
             var response = await _serverRequestHandler.SendRequestToServer(
                 WeeklyMeterReading.Usage,
+                WeeklyMeterReading.Cost,
                 RequestType.WeeklyUsage,
                 TariffType,
-                1, // BillingPeriod
+                7,
                 StandingCharge,
                 Mpan
             );
@@ -245,14 +248,11 @@ public partial class MainPage : ContentPage
             {
                 WeeklyMeterReading.Cost += response.Cost.Value;
 
-                //move at some point
+                //move at some point to it's own timer
                 WeeklyMeterReading.Usage += _randomisedValueProvider.GenerateRandomReading();
-
-                await MainThread.InvokeOnMainThreadAsync(() =>
-                {
-                    RefreshActiveTab(); // Refresh the active tab only
-                });
             }
+
+            await MainThread.InvokeOnMainThreadAsync(RefreshActiveTab);
         }
         catch (Exception ex)
         {
@@ -292,7 +292,7 @@ public partial class MainPage : ContentPage
                 Usage = _randomisedValueProvider.GenerateRandomReading()
             };
 
-            MainThread.BeginInvokeOnMainThread(() => RefreshActiveTab());
+            MainThread.BeginInvokeOnMainThread(RefreshActiveTab);
         }
     }
 
