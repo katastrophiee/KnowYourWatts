@@ -83,8 +83,8 @@
 
             <Frame CornerRadius="10" 
            BackgroundColor="#F0F0F0" 
-           WidthRequest="300" 
-           HeightRequest="200"
+           WidthRequest="400" 
+           HeightRequest="225"
            HorizontalOptions="Center" 
            VerticalOptions="Center"
            HasShadow="True">
