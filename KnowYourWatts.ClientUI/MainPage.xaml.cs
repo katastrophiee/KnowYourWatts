@@ -26,7 +26,7 @@ public partial class MainPage : ContentPage
 
     private Button _activeTab = null!; // Reference to the active tab
 
-    public MainPage(IRandomisedValueProvider randomisedValueProvider, IServerRequestHandler serverRequestHandler)
+    public MainPage(IRandomisedValueProvider randomisedValueProvider, IServerRequestHandler serverRequestHandler, IEncryptionHelper encryptionHelper)
     {
         _randomisedValueProvider = randomisedValueProvider;
         _serverRequestHandler = serverRequestHandler;
@@ -106,7 +106,8 @@ public partial class MainPage : ContentPage
                 TariffType,
                 1, // BillingPeriod
                 StandingCharge,
-                Mpan
+                Mpan,
+                EncryptedMpan
             );
 
             if (response is null)

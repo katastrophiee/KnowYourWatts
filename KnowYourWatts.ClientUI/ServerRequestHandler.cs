@@ -18,6 +18,7 @@ public class ServerRequestHandler(
     private readonly ClientSocket ClientSocket = clientSocket;
     private readonly IEncryptionHelper _encryptionHelper = encryptionHelper;
     private string PublicKey;
+    public event Action<string> ErrorMessage;
 
     public async Task<SmartMeterCalculationResponse?> SendRequestToServer(
         decimal initialReading,
