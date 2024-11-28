@@ -33,10 +33,13 @@ namespace KnowYourWatts.Tests;
 
         _request = new()
         {
+            Mpan = "1234567890",
             TariffType = TariffType.Fixed,
             CurrentReading = 2,
+            CurrentCost = 10,
             BillingPeriod = 1,
-            StandingCharge = 1
+            StandingCharge = 1,
+            RequestType = RequestType.CurrentUsage
         };
 
         _tariffRepository.GetTariffPriceByType(Arg.Is<TariffType>(t => t == TariffType.Fixed)).Returns(new TariffTypeAndPrice { PriceInPence = 24.50m });
@@ -60,7 +63,7 @@ namespace KnowYourWatts.Tests;
         decimal expectedCostResult)
     {
         //Arrange
-        _previousReadingRepository.GetPreviousReadingByMpanAndReqType(Arg.Any<string>()).Returns(previousReading);
+        _previousReadingRepository.GetPreviousReadingByMpanAndReqType(Arg.Any<string>(), Arg.Any<RequestType>()).Returns(previousReading);
 
         _request.TariffType = TariffType.Fixed;
 
@@ -91,7 +94,7 @@ namespace KnowYourWatts.Tests;
         decimal expectedCostResult)
     {
         //Arrange
-        _previousReadingRepository.GetPreviousReadingByMpanAndReqType(Arg.Any<string>()).Returns(previousReading);
+        _previousReadingRepository.GetPreviousReadingByMpanAndReqType(Arg.Any<string>(), Arg.Any<RequestType>()).Returns(previousReading);
 
         _request.TariffType = TariffType.Flex;
 
@@ -123,7 +126,7 @@ namespace KnowYourWatts.Tests;
         decimal expectedCostResult)
     {
         //Arrange
-        _previousReadingRepository.GetPreviousReadingByMpanAndReqType(Arg.Any<string>()).Returns(previousReading);
+        _previousReadingRepository.GetPreviousReadingByMpanAndReqType(Arg.Any<string>(), Arg.Any<RequestType>()).Returns(previousReading);
 
         _request.TariffType = TariffType.Green;
 
@@ -155,7 +158,7 @@ namespace KnowYourWatts.Tests;
         decimal expectedCostResult)
     {
         //Arrange
-        _previousReadingRepository.GetPreviousReadingByMpanAndReqType(Arg.Any<string>()).Returns(previousReading);
+        _previousReadingRepository.GetPreviousReadingByMpanAndReqType(Arg.Any<string>(), Arg.Any<RequestType>()).Returns(previousReading);
 
         _request.TariffType = TariffType.OffPeak;
 
@@ -169,25 +172,6 @@ namespace KnowYourWatts.Tests;
         //Assert
         Assert.That(string.IsNullOrEmpty(result.ErrorMessage), Is.True);
         Assert.That(result.Cost, Is.EqualTo(expectedCostResult));
-    }
-
-    /// <summary>
-    /// Test to ensure that the calculated cost for the energy used is added to the previous total cost in the mock db
-    /// </summary>
-    [Test]
-    public void TotalCostIsSaved()
-    {
-        //Arrange
-        //NA - Handled in the setup
-
-        //Act
-        var result = _calculationProvider.CalculateCost(_request);
-
-        //Assert
-        _costRepository.Received(1).AddOrUpdateClientTotalCost(
-            Arg.Is<string>(m => m == _request.Mpan),
-            Arg.Is<decimal>(u => u == result.Cost)
-        );
     }
 
     /// <summary>
@@ -205,7 +189,8 @@ namespace KnowYourWatts.Tests;
         //Assert
         _previousReadingRepository.Received(1).AddOrUpdatePreviousReading(
             Arg.Is<string>(m => m == _request.Mpan),
-            Arg.Is<decimal>(u => u == _request.CurrentReading)
+            Arg.Is<decimal>(u => u == _request.CurrentReading),
+            Arg.Any<RequestType>()
         );
     }
 
@@ -216,7 +201,7 @@ namespace KnowYourWatts.Tests;
     public void NoErrorWhenNullPreviousReading()
     {
         //Arrange
-        _previousReadingRepository.GetPreviousReadingByMpanAndReqType(Arg.Any<string>()).Returns(null as decimal?);
+        _previousReadingRepository.GetPreviousReadingByMpanAndReqType(Arg.Any<string>(), Arg.Any<RequestType>()).Returns(null as decimal?);
 
         //Act
         var result = _calculationProvider.CalculateCost(_request);
@@ -224,7 +209,8 @@ namespace KnowYourWatts.Tests;
         //Assert
         _previousReadingRepository.Received(1).AddOrUpdatePreviousReading(
             Arg.Is<string>(m => m == _request.Mpan),
-            Arg.Is<decimal>(u => u == _request.CurrentReading)
+            Arg.Is<decimal>(u => u == _request.CurrentReading),
+            Arg.Any<RequestType>()
         );
 
         Assert.That(string.IsNullOrEmpty(result.ErrorMessage), Is.True);
@@ -238,7 +224,7 @@ namespace KnowYourWatts.Tests;
     {
         //Arrange
         _request.CurrentReading = 3;
-        _previousReadingRepository.GetPreviousReadingByMpanAndReqType(Arg.Any<string>()).Returns(6);
+        _previousReadingRepository.GetPreviousReadingByMpanAndReqType(Arg.Any<string>(), Arg.Any<RequestType>()).Returns(6);
 
         //Act
         var result = _calculationProvider.CalculateCost(_request);
@@ -267,6 +253,76 @@ namespace KnowYourWatts.Tests;
         {
             Assert.That(string.IsNullOrEmpty(result.ErrorMessage), Is.False);
             Assert.That(result.ErrorMessage, Is.EqualTo($"Tariff type '{_request.TariffType}' does not exist."));
+        });
+    }
+
+    /// <summary>
+    /// Test to ensure that the current cost is saved to the mock db as the new previous cost once calculations are done
+    /// </summary>
+    [TestCase(RequestType.TodaysUsage)]
+    [TestCase(RequestType.WeeklyUsage)]
+    public void PreviousCostIsSaved(RequestType requestType)
+    {
+        //Arrange
+        _request.RequestType = requestType;
+
+        //Act
+        var result = _calculationProvider.CalculateCost(_request);
+
+        //Assert
+        _costRepository.Received(1).AddOrUpdateClientTotalCost(
+            Arg.Is<string>(m => m == _request.Mpan),
+            Arg.Is<decimal>(u => u == _request.CurrentCost + result.Cost),
+            Arg.Is<RequestType>(r => r == requestType)
+        );
+    }
+
+    /// <summary>
+    /// Test to ensure that no error occurs when the previous cost is null 
+    /// </summary>
+    [TestCase(RequestType.TodaysUsage)]
+    [TestCase(RequestType.WeeklyUsage)]
+    public void NoErrorWhenNullPreviousCost(RequestType requestType)
+    {
+        //Arrange
+        _request.RequestType = requestType;
+
+        _costRepository.GetPreviousTotalCostByMpanAndReqType(Arg.Any<string>(), requestType).Returns(null as decimal?);
+
+        //Act
+        var result = _calculationProvider.CalculateCost(_request);
+
+        //Assert
+        _costRepository.Received(1).AddOrUpdateClientTotalCost(
+            Arg.Is<string>(m => m == _request.Mpan),
+            Arg.Is<decimal>(u => u == _request.CurrentCost + result.Cost),
+            Arg.Any<RequestType>()
+        );
+
+        Assert.That(string.IsNullOrEmpty(result.ErrorMessage), Is.True);
+    }
+
+    /// <summary>
+    /// Test to ensure that an error message is returned when the current total cost is less than the previous total cost
+    /// </summary>
+    [TestCase(RequestType.TodaysUsage)]
+    [TestCase(RequestType.WeeklyUsage)]
+    public void ErrorWhenCurrentCostLargerThanPrevious(RequestType requestType)
+    {
+        //Arrange
+        _request.CurrentCost = 3;
+        _request.RequestType = requestType;
+
+        _costRepository.GetPreviousTotalCostByMpanAndReqType(Arg.Any<string>(), requestType).Returns(20);
+
+        //Act
+        var result = _calculationProvider.CalculateCost(_request);
+
+        //Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(string.IsNullOrEmpty(result.ErrorMessage), Is.False);
+            Assert.That(result.ErrorMessage, Is.EqualTo("The new total cost is less than the previous total cost."));
         });
     }
 }

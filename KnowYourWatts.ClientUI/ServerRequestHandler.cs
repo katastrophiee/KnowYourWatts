@@ -9,84 +9,47 @@ using System.Text;
 
 namespace KnowYourWatts.ClientUI;
 
-public class ServerRequestHandler(
-    IRandomisedValueProvider randomisedValueProvider,
-    ClientSocket clientSocket) : IServerRequestHandler
+public class ServerRequestHandler : IServerRequestHandler
 {
-    private readonly ClientSocket ClientSocket = clientSocket;
-    private readonly IRandomisedValueProvider _randomisedValueProvider = randomisedValueProvider;
-    public event Action<string> ErrorMessage;
-    private static ConcurrentQueue<byte[]> requestQueue = new ConcurrentQueue<byte[]>();
-    private static ConcurrentQueue<CurrentUsageRequest> currentRequestQueue = new ConcurrentQueue<CurrentUsageRequest>();
-    private static SemaphoreSlim semaphore = new SemaphoreSlim(1, 1);
+    private readonly ClientSocket _clientSocket;
+    public event Action<string> ErrorMessage = null!;
+    private readonly bool RunProcessQueue = true;
+    private readonly BlockingCollection<ServerRequest> _requestQueue = [];
+    private TaskCompletionSource<SmartMeterCalculationResponse?>? _response = null!;
+
+    public ServerRequestHandler(ClientSocket clientSocket)
+    {
+        _clientSocket = clientSocket;
+        Task.Run(ProcessQueue);
+    }
+
+    // Entry point for the UI to send a request to the server
     public async Task<SmartMeterCalculationResponse?> SendRequestToServer(
         decimal initialReading,
+        decimal currentCost,
         RequestType requestType,
         TariffType tariffType,
         int billingPeriod,
         decimal standingCharge,
         string mpan)
     {
+        //Create the request for the data
+        var request = new CurrentUsageRequest(tariffType, initialReading, currentCost, billingPeriod, standingCharge);
 
-        var currentUsageRequest = new CurrentUsageRequest
-        {
-            TariffType = tariffType,
-            CurrentReading = initialReading,
-            BillingPeriod = billingPeriod,
-            StandingCharge = standingCharge
-        };
+        _response = new TaskCompletionSource<SmartMeterCalculationResponse?>();
 
-        //initialReading += _randomisedValueProvider.GenerateRandomReading();
+        QueueRequestForServer(mpan, requestType, request);
 
-        /*await Task.Run(async () =>
-        {
-            await SendRequest(mpan, requestType, currentUsageRequest);
-        });*/
-        /*ThreadPool.QueueUserWorkItem(async _ =>
-        {
-            await SendRequest(mpan, requestType, currentUsageRequest);
-        });*/
-        /* var response = new SmartMeterCalculationResponse();
-         ThreadPool.QueueUserWorkItem(async _ =>
-         {
-             response = await HandleServerResponse(currentUsageRequest.CurrentReading);
-         });*/
-        await SendRequest(mpan, requestType, currentUsageRequest);
-        currentRequestQueue.Enqueue(currentUsageRequest);
-        if (currentRequestQueue.TryDequeue(out currentUsageRequest))
-        {
-            await semaphore.WaitAsync();
-            try
-            {
-                await SendRequest(mpan, requestType, currentUsageRequest);
-
-            }
-            finally
-            {
-                semaphore.Release();
-            }
-        }
-
-        return await HandleServerResponse(currentUsageRequest.CurrentReading);
-
+        return await _response.Task;
     }
 
-    /*//https://stackoverflow.com/questions/59186013/how-to-call-queue-client-sendasync-method-using-c-sharp*/
+
     private async Task SendRequest<T>(string mpan, RequestType requestType, T request) where T : IUsageRequest
     {
         
         try
         {
-            // If the socket is null and the socket is not connected, throw an invalid operation exception (method cannot be performed).
-            // Use this exception as you wish, this is a basic implementation.
-            if (ClientSocket.Socket == null || !ClientSocket.Socket.Connected) 
-            {
-                await ClientSocket.ConnectClientToServer();
-            }
-              
-            
-
-            // Create a new request.
+            // Create the request for the server
             var serverRequest = new ServerRequest
             {
                 Mpan = mpan,
@@ -94,46 +57,31 @@ public class ServerRequestHandler(
                 Data = JsonConvert.SerializeObject(request)
             };
 
-            byte[] data = Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(serverRequest));
-            requestQueue.Enqueue(data);
-            while (requestQueue.TryDequeue(out data))
-            {
-                await semaphore.WaitAsync();
-                try
-                {
-                    await ClientSocket.Socket!.SendAsync(data);
-
-                }
-                finally
-                {
-                    semaphore.Release();
-                }
-                //await ClientSocket.Socket!.SendAsync(data);
-            }
-            //ThreadPool.QueueUserWorkItem(state => _connectionHandler.HandleConnection(handler));
+            // Add it to the queue
+            _requestQueue.Add(serverRequest);
         }
         catch (Exception ex)
         {
             ErrorMessage.Invoke(ex.Message);
         }
-
     }
 
-    private async Task<SmartMeterCalculationResponse?> HandleServerResponse(decimal currentCost)
+    private async Task<SmartMeterCalculationResponse?> HandleServerResponse()
     {
         try
         {
-
-            //await ClientSocket.ConnectClientToServer();
+            // Receive the response from the server
             byte[] buffer = new byte[1024];
-            var bytesReceived = await ClientSocket.Socket.ReceiveAsync(buffer);
+            var bytesReceived = await _clientSocket.Socket.ReceiveAsync(buffer);
 
             var receivedData = Encoding.ASCII.GetString(buffer, 0, bytesReceived);
 
             var response = JsonConvert.DeserializeObject<SmartMeterCalculationResponse>(receivedData);
 
-            ClientSocket.Socket.Shutdown(SocketShutdown.Both);
+            // Close the connection
+            _clientSocket.Socket.Shutdown(SocketShutdown.Both);
 
+            // Check the response is not null
             if (response is null)
             {
                 ErrorMessage.Invoke("No response was received from the server.");
@@ -147,10 +95,41 @@ public class ServerRequestHandler(
             ErrorMessage.Invoke(ex.Message);
             return null;
         }
+    }
 
-        //check the requestype
-        // get the response data, convert to string
-        // populate the MeterReading Model class
-        //display on Screen
+    private async Task ProcessQueue()
+    {
+        // Ensure the queue is always being processed
+        while (RunProcessQueue)
+        {
+            // Iterate through each item in the queue
+            foreach (var request in _requestQueue.GetConsumingEnumerable())
+            {
+                try
+                {
+                    // Connect to the server
+                    await _clientSocket.ConnectClientToServer();
+
+                    // Send our request to the server
+                    var data = Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(request));
+                    await _clientSocket.Socket.SendAsync(data);
+
+                    // Handle the response from the server
+                    var response = await HandleServerResponse();
+
+                    // Set the response to this task as the request has been completed
+                    _response?.SetResult(response);
+                }
+                catch (Exception ex)
+                {
+                    _response = null;
+                    ErrorMessage.Invoke(ex.Message);
+                }
+                finally
+                {
+                    _response = null;
+                }
+            }
+        }
     }
 }

@@ -6,8 +6,6 @@ namespace KnowYourWatts.ClientUI;
 
 public static class MauiProgram
 {
-    
-
     public static MauiApp CreateMauiApp()
     {
         var builder = MauiApp.CreateBuilder();
@@ -36,32 +34,18 @@ public static class MauiProgram
         var host = Dns.GetHostEntry("localhost");
         var ipAddress = host.AddressList[0];
         var remoteEndPoint = new IPEndPoint(ipAddress, 11000);
-        //Generate random Mpan
 
         builder.Services.AddScoped<IRandomisedValueProvider, RandomisedValueProvider>();
         builder.Services.AddSingleton<IServerRequestHandler, ServerRequestHandler>();
 
         try
         {
-           var currentClientSocket = new ClientSocket(
+            var clientSocket = new ClientSocket(
                 ipAddress,
                 remoteEndPoint
             );
-           /* var dailyClientSocket = new ClientSocket(
-               ipAddress,
-               remoteEndPoint
-           );
-            var weeklyClientSocket = new ClientSocket(
-               ipAddress,
-               remoteEndPoint
-           );*/
 
-
-            //await ClientSocket.ConnectClientToServer();
-
-            builder.Services.AddSingleton(currentClientSocket);
-            /*builder.Services.AddSingleton(dailyClientSocket);
-            builder.Services.AddSingleton(weeklyClientSocket);*/
+            builder.Services.AddSingleton(clientSocket);
         }
         catch (Exception ex)
         {

@@ -8,6 +8,8 @@ public class WeeklyUsageRequest : IUsageRequest
 
     public decimal CurrentReading { get; set; }
 
+    public decimal CurrentCost { get; set; }
+
     public int BillingPeriod { get; set; }
 
     public decimal StandingCharge { get; set; }
