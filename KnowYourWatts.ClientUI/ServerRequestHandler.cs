@@ -46,8 +46,10 @@ public class ServerRequestHandler(
         // If mpan is null or whitespace, throw error as empty MPAN is invalid
         if (string.IsNullOrWhiteSpace(mpan))
         {
-            throw new ArgumentException("MPAN cannot be null or empty.");
+            Console.WriteLine("MPAN cannot be null or empty.");
+            return string.Empty;
         }
+
 
         try
         {
@@ -65,35 +67,35 @@ public class ServerRequestHandler(
 
             byte[] data = Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(request));
 
-        await ClientSocket.Socket!.SendAsync(data);
+            await ClientSocket.Socket!.SendAsync(data);
             // Receives public key as a response
             byte[] buffer = new byte[1024];
             var bytesReceived = await ClientSocket.Socket.ReceiveAsync(buffer);
 
             if (bytesReceived == 0)
-            {
                 throw new Exception("No data received from server.");
-            }
 
             // Deserialize the response
             var response = Encoding.ASCII.GetString(buffer, 0, bytesReceived);
             // If the response is null or whitespace, throw exception
             if (string.IsNullOrWhiteSpace(response))
-            {
                 throw new Exception("Received an empty or invalid response from the server.");
-            }
             // Deserialize the public key
             var deserializedResponse = JsonConvert.DeserializeObject<string>(response) ?? "";
             // If the deserialized response is null or whitespace, throw error as deserialization must have gone wrong
             if (string.IsNullOrWhiteSpace(deserializedResponse))
-            {
                 throw new Exception("Response deserialization failed.");
-            }
 
             // Set the public key
             PublicKey = deserializedResponse;
 
+            if (ClientSocket.Socket.Connected)
+            {
+                ClientSocket.Socket.Shutdown(SocketShutdown.Both);
+            }
+
             return PublicKey;
+
         }
         // Catch SocketException if a socket error occurs in the try block
         catch (SocketException ex)
@@ -111,14 +113,6 @@ public class ServerRequestHandler(
             Console.WriteLine($"Unexpected error: {ex.Message}");
             throw; // Re-throw the exception to notify the caller
         }
-        // Final block to shut down the socket connection if it hasn't been shut already
-        finally
-        {
-            if (ClientSocket.Socket.Connected)
-            {
-                ClientSocket.Socket.Shutdown(SocketShutdown.Both);
-            }
-        }
     }
 
 
@@ -126,14 +120,19 @@ public class ServerRequestHandler(
     {
         try
         {
-            // If the socket is null and the socket is not connected, throw an invalid operation exception (method cannot be performed).
-            // Use this exception as you wish, this is a basic implementation.
+
+            int timeout = 13000;
+            var task = GetPublicKey(mpan);
 
             if (string.IsNullOrEmpty(PublicKey))
             {
-                // Add some kind of error handling here - if the server returns a null, will this just infinitely wait? If the GetPublicKey
-                // returns an error, how will it be handled?
-                await GetPublicKey(mpan);
+                // Writes an exception to console if the delay of 13 seconds takes less time to complete than the public key being awaited.
+                // Effectively sets a timeout of 13 seconds for retrieving the key.
+                if (await Task.WhenAny(task, Task.Delay(timeout)) != task)
+                {
+                    Console.WriteLine("Public key retrieval timed out.");
+                    return;
+                }
             }
 
             var encryptedMpan = _encryptionHelper.EncryptData(Encoding.ASCII.GetBytes(mpan), PublicKey);
@@ -155,7 +154,8 @@ public class ServerRequestHandler(
         }
         catch (Exception ex)
         {
-            //error page
+            Console.WriteLine(ex.Message);
+            // Maybe add error page later
         }
     }
 

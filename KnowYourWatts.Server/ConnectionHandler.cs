@@ -6,6 +6,7 @@ using KnowYourWatts.Server.DTO.Requests;
 using KnowYourWatts.Server.DTO.Enums;
 using System.Net.WebSockets;
 using KnowYourWatts.Server.DTO.Responses;
+using System;
 
 namespace KnowYourWatts.Server;
 
@@ -62,14 +63,17 @@ public sealed class ConnectionHandler(
 
             if (string.IsNullOrEmpty(request.Mpan))
             {
+                Console.WriteLine("Error: No MPAN was provided with the request.");
                 var response = Encoding.ASCII.GetBytes(SerializeErrorResponse("No MPAN was provided with the request."));
+                Console.WriteLine(response);
                 handler.Send(response);
                 return;
             }
 
             if (request.EncryptedMpan.Length == 0)
             {
-                var reponse = Encoding.ASCII.GetBytes(SerializeErrorResponse("BOOOOOO"));
+                Console.WriteLine("Error: MPAN length is invalid.");
+                var reponse = Encoding.ASCII.GetBytes(SerializeErrorResponse("MPAN length is invalid."));
                 handler.Send(reponse);
                 return;
             }
@@ -80,6 +84,7 @@ public sealed class ConnectionHandler(
             // If decrypted MPAN does not match request MPAN, return error as may have wrong key.
             if (request.Mpan != decryptedMpan)
             {
+                Console.WriteLine("Error: The decrypted MPAN does not match the request MPAN");
                 var resposnse = Encoding.ASCII.GetBytes(SerializeErrorResponse("The decrypted MPAN does not match the request MPAN"));
                 handler.Send(resposnse);
                 return;
@@ -105,14 +110,12 @@ public sealed class ConnectionHandler(
         catch (JsonReaderException ex)
         {
             Console.WriteLine($"JSON Reader Error: {ex}");
-            var response = Encoding.ASCII.GetBytes("An error occured when trying to deserialise the JSON");
-            handler.Send(response);
+            return;
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error handling connection: {ex}");
-            var response = Encoding.ASCII.GetBytes("An unknown error occured when handling the connection.");
-            handler.Send(response);
+            return;
         }
     }
 

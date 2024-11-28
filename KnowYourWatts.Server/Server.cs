@@ -6,15 +6,11 @@ namespace KnowYourWatts.Server;
 
 public sealed class Server(
     IConnectionHandler connectionHandler,
-    IKeyHandler keyHandler,
-    //IPHostEntry host,
     IPAddress ipAddress,
     IPEndPoint localEndPoint)
 {
     private readonly IConnectionHandler _connectionHandler = connectionHandler;
-    private readonly IKeyHandler _keyHandler = keyHandler;
-    //private readonly IPHostEntry Host = host;
-    private readonly bool RunServer = true;
+    private readonly bool _runServer = true;
 
     public void Start()
     {
@@ -25,7 +21,7 @@ public sealed class Server(
             listener.Listen(30);
             Console.WriteLine($"Server started at {localEndPoint.Address}:{localEndPoint.Port}");
 
-            while (RunServer)
+            while (_runServer)
             {
                 if (listener.Poll(1000, SelectMode.SelectRead))
                 {

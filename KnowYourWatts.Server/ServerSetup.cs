@@ -36,7 +36,6 @@ public sealed class ServerSetup
         {
             Server = new(
                 serviceProvider.GetRequiredService<IConnectionHandler>(),
-                serviceProvider.GetRequiredService<IKeyHandler>(),
                 ipAddress,
                 localEndPoint
             );
