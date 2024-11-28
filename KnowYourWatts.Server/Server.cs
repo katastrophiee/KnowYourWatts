@@ -10,20 +10,18 @@ public sealed class Server(
     IPEndPoint localEndPoint)
 {
     private readonly IConnectionHandler _connectionHandler = connectionHandler;
-    private readonly IPAddress _ipAddress = ipAddress;
-    private readonly IPEndPoint _localEndPoint = localEndPoint;
-    private readonly bool RunServer = true;
+    private readonly bool _runServer = true;
 
     public void Start()
     {
         try
         {
-            var listener = new Socket(_ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            listener.Bind(_localEndPoint);
+            var listener = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            listener.Bind(localEndPoint);
             listener.Listen(30);
-            Console.WriteLine($"Server started at {_localEndPoint.Address}:{_localEndPoint.Port}");
+            Console.WriteLine($"Server started at {localEndPoint.Address}:{localEndPoint.Port}");
 
-            while (RunServer)
+            while (_runServer)
             {
                 if (listener.Poll(1000, SelectMode.SelectRead))
                 {

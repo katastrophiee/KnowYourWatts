@@ -5,7 +5,9 @@ namespace KnowYourWatts.ClientUI.Interfaces;
 
 public interface IServerRequestHandler
 {
-    Task<SmartMeterCalculationResponse?> SendRequestToServer(decimal initialReading, RequestType requestType, TariffType tariffType, int billingPeriod, decimal standingCharge, string mpan);
+    Task<SmartMeterCalculationResponse?> SendRequestToServer(decimal initialReading, RequestType requestType, TariffType tariffType, int billingPeriod, decimal standingCharge, string mpan, byte[] encryptedMpan);
 
     event Action<string> ErrorMessage;
+
+    Task<string> GetPublicKey(string mpan);
 }

@@ -16,7 +16,6 @@ class RandomisedValueProvider : IRandomisedValueProvider
         }
 
         return mpan.ToString();
-       
     }
     public decimal GenerateRandomReading()
     {

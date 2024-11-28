@@ -1,6 +1,7 @@
 ﻿using KnowYourWatts.ClientUI.DTO.Enums;
 using KnowYourWatts.ClientUI.DTO.Models;
 using KnowYourWatts.ClientUI.Interfaces;
+using System.Text;
 using System.Timers;
 
 namespace KnowYourWatts.ClientUI;
@@ -13,10 +14,13 @@ public partial class MainPage : ContentPage
 
     readonly IRandomisedValueProvider _randomisedValueProvider;
     readonly IServerRequestHandler _serverRequestHandler;
+    readonly IEncryptionHelper _encryptionHelper;
 
     private TariffType TariffType;
     private decimal StandingCharge;
     private string Mpan;
+    private string PublicKey;
+    private byte[] EncryptedMpan;
 
     private DateTime LastUpdatedDate = DateTime.Now.Date;
 
@@ -26,6 +30,7 @@ public partial class MainPage : ContentPage
     {
         _randomisedValueProvider = randomisedValueProvider;
         _serverRequestHandler = serverRequestHandler;
+        _encryptionHelper = encryptionHelper;
 
         _serverRequestHandler.ErrorMessage += ShowError;
 
