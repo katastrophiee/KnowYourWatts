@@ -57,9 +57,9 @@ public partial class MainPage : ContentPage
 
         SelectTab(CurrentUsageTab, "Current Usages");
         StartClock(); // Start clock independently
-        StartRandomCurrentReadingTimer();
+      //  StartRandomCurrentReadingTimer();
         StartRandomDailyReadingTimer();
-        StartRandomWeeklyReadingTimer();
+        //StartRandomWeeklyReadingTimer();
     }
 
     private void StartClock()
@@ -109,14 +109,14 @@ public partial class MainPage : ContentPage
 
         timer.Elapsed += async (sender, e) =>
         {
-            /* await MainThread.InvokeOnMainThreadAsync(async () =>
-             {
-                 await SendReadingToServerDaily();
-             });*/
-            await Task.Run(async () =>
+            await MainThread.InvokeOnMainThreadAsync(async () =>
             {
                 await SendReadingToServerDaily();
             });
+          /*  await Task.Run(async () =>
+            {
+                await SendReadingToServerDaily();
+            });*/
             /*ThreadPool.QueueUserWorkItem(async _ =>
             {
                 await SendReadingToServerDaily();
@@ -185,7 +185,7 @@ public partial class MainPage : ContentPage
                 CurrentMeterReading.Cost += response.Cost.Value;
 
                 //move at some point
-                CurrentMeterReading.Usage += _randomisedValueProvider.GenerateRandomReading();
+                CurrentMeterReading.Usage = _randomisedValueProvider.GenerateRandomReading();
 
             }
                
@@ -270,7 +270,7 @@ public partial class MainPage : ContentPage
                 WeeklyMeterReading.Cost += response.Cost.Value;
 
                 //move at some point to it's own timer
-                WeeklyMeterReading.Usage += _randomisedValueProvider.GenerateRandomReading();
+                //WeeklyMeterReading.Usage = response.Usage.Value;
             }
 
             await MainThread.InvokeOnMainThreadAsync(RefreshActiveTab);

@@ -110,7 +110,8 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider) 
                 CurrentReading = request.CurrentReading,
                 CurrentCost = request.CurrentCost,
                 BillingPeriod = request.BillingPeriod,
-                StandingCharge = request.StandingCharge
+                StandingCharge = request.StandingCharge,
+                RequestType = request.RequestType
             };
 
             //Calculate the cost of the electricity used

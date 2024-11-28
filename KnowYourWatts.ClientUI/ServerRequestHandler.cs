@@ -44,7 +44,7 @@ public class ServerRequestHandler : IServerRequestHandler
     }
 
 
-    private async Task SendRequest<T>(string mpan, RequestType requestType, T request) where T : IUsageRequest
+    private async Task QueueRequestForServer<T>(string mpan, RequestType requestType, T request) where T : IUsageRequest
     {
         
         try
