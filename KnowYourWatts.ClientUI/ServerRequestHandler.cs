@@ -74,18 +74,28 @@ public class ServerRequestHandler(
             var bytesReceived = await ClientSocket.Socket.ReceiveAsync(buffer);
 
             if (bytesReceived == 0)
-                throw new Exception("No data received from server.");
+            {
+                Console.WriteLine("Null error: No data received from the server");
+                return string.Empty;
+            }
+
 
             // Deserialize the response
             var response = Encoding.ASCII.GetString(buffer, 0, bytesReceived);
             // If the response is null or whitespace, throw exception
             if (string.IsNullOrWhiteSpace(response))
-                throw new Exception("Received an empty or invalid response from the server.");
+            {
+                Console.WriteLine("Error: Received an empty or invalid response from the server.");
+                return string.Empty;
+            }
             // Deserialize the public key
             var deserializedResponse = JsonConvert.DeserializeObject<string>(response) ?? "";
             // If the deserialized response is null or whitespace, throw error as deserialization must have gone wrong
             if (string.IsNullOrWhiteSpace(deserializedResponse))
-                throw new Exception("Response deserialization failed.");
+            {
+                Console.WriteLine("Deserialization error: Response deserialization failed.");
+                return string.Empty;
+            }
 
             // Set the public key
             PublicKey = deserializedResponse;
@@ -101,18 +111,20 @@ public class ServerRequestHandler(
         // Catch SocketException if a socket error occurs in the try block
         catch (SocketException ex)
         {
-            throw new Exception("An error occurred while communicating with the server.", ex);
+            Console.WriteLine("Socket error: " + ex.Message);
+            return string.Empty;
         }
         // Catch JsonException if an issue occurs with serialization or deserialization of request or response
         catch (JsonException ex)
         {;
-            throw new Exception("An error occurred while processing the server response.", ex);
+            Console.WriteLine("JSON error: " + ex.Message);
+            return string.Empty;
         }
         // General exception handler block
         catch (Exception ex)
         {
             Console.WriteLine($"Unexpected error: {ex.Message}");
-            throw; // Re-throw the exception to notify the caller
+            return string.Empty;
         }
     }
 
@@ -121,19 +133,25 @@ public class ServerRequestHandler(
     {
         try
         {
-
-            int timeout = 13000;
-            var task = GetPublicKey(mpan);
+            // Attempts the GetPublicKey operation up to 5 times.
+            // If, after this, the PublicKey is still null or empty, errors and returns. 
+            for (var retryCount = 0; retryCount < 5;  retryCount++)
+            {
+                // Retries GetPublicKey operation up to 5 times before failing.
+                if (string.IsNullOrEmpty(PublicKey))
+                {
+                    await GetPublicKey(mpan);
+                }
+                else
+                {
+                    break;
+                }
+            }
 
             if (string.IsNullOrEmpty(PublicKey))
             {
-                // Writes an exception to console if the delay of 13 seconds takes less time to complete than the public key being awaited.
-                // Effectively sets a timeout of 13 seconds for retrieving the key.
-                if (await Task.WhenAny(task, Task.Delay(timeout)) != task)
-                {
-                    Console.WriteLine("Public key retrieval timed out.");
-                    return;
-                }
+                Console.WriteLine("Failed to retrieve public key.");
+                return;
             }
 
             var encryptedMpan = _encryptionHelper.EncryptData(Encoding.ASCII.GetBytes(mpan), PublicKey);
