@@ -1,6 +1,4 @@
-﻿using System.Net;
-
-namespace KnowYourWatts.ClientUI;
+﻿namespace KnowYourWatts.ClientUI;
 
 public partial class App : Application
 {

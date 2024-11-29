@@ -4,7 +4,6 @@ using KnowYourWatts.ClientUI.DTO.Response;
 using KnowYourWatts.ClientUI.Interfaces;
 using Newtonsoft.Json;
 using System.Net.Sockets;
-using System.Security.Cryptography;
 using System.Text;
 
 namespace KnowYourWatts.ClientUI;
@@ -17,7 +16,8 @@ public class ServerRequestHandler(
     private readonly IRandomisedValueProvider _randomisedValueProvider = randomisedValueProvider;
     private readonly ClientSocket ClientSocket = clientSocket;
     private readonly IEncryptionHelper _encryptionHelper = encryptionHelper;
-    private string PublicKey;
+    private string PublicKey = "";
+    public event Action<string> ErrorMessage;
 
     public async Task<SmartMeterCalculationResponse?> SendRequestToServer(
         decimal initialReading,
@@ -44,16 +44,15 @@ public class ServerRequestHandler(
 
     public async Task<string> GetPublicKey(string mpan)
     {
-        // If mpan is null or whitespace, throw error as empty MPAN is invalid
-        if (string.IsNullOrWhiteSpace(mpan))
-        {
-            Console.WriteLine("MPAN cannot be null or empty.");
-            return string.Empty;
-        }
-
-
         try
         {
+            // If mpan is null or whitespace, throw error as empty MPAN is invalid
+            if (string.IsNullOrWhiteSpace(mpan))
+            {
+                ErrorMessage.Invoke("MPAN cannot be null or empty.");
+                return string.Empty;
+            }
+
             // Wait for the socket to connect to the server
             await ClientSocket.ConnectClientToServer();
 
@@ -69,41 +68,41 @@ public class ServerRequestHandler(
             byte[] data = Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(request));
 
             await ClientSocket.Socket!.SendAsync(data);
+
             // Receives public key as a response
             byte[] buffer = new byte[1024];
             var bytesReceived = await ClientSocket.Socket.ReceiveAsync(buffer);
 
             if (bytesReceived == 0)
             {
-                Console.WriteLine("Null error: No data received from the server");
+                ErrorMessage.Invoke("No data received from the server");
                 return string.Empty;
             }
 
-
-            // Deserialize the response
+            // Receive the response from the server
             var response = Encoding.ASCII.GetString(buffer, 0, bytesReceived);
-            // If the response is null or whitespace, throw exception
+
+            // Return the response is null or whitespace
             if (string.IsNullOrWhiteSpace(response))
             {
-                Console.WriteLine("Error: Received an empty or invalid response from the server.");
-                return string.Empty;
-            }
-            // Deserialize the public key
-            var deserializedResponse = JsonConvert.DeserializeObject<string>(response) ?? "";
-            // If the deserialized response is null or whitespace, throw error as deserialization must have gone wrong
-            if (string.IsNullOrWhiteSpace(deserializedResponse))
-            {
-                Console.WriteLine("Deserialization error: Response deserialization failed.");
+                ErrorMessage.Invoke("Received an empty or invalid response from the server.");
                 return string.Empty;
             }
 
-            // Set the public key
-            PublicKey = deserializedResponse;
+            // Deserialize the public key
+            var publicKey = JsonConvert.DeserializeObject<string>(response) ?? "";
+
+            // If the deserialized response is null or whitespace, throw error as deserialization must have gone wrong
+            if (string.IsNullOrWhiteSpace(publicKey))
+            {
+                ErrorMessage.Invoke("No public key was received from the server.");
+                return string.Empty;
+            }
+
+            PublicKey = publicKey;
 
             if (ClientSocket.Socket.Connected)
-            {
                 ClientSocket.Socket.Shutdown(SocketShutdown.Both);
-            }
 
             return PublicKey;
 
@@ -111,19 +110,19 @@ public class ServerRequestHandler(
         // Catch SocketException if a socket error occurs in the try block
         catch (SocketException ex)
         {
-            Console.WriteLine("Socket error: " + ex.Message);
+            ErrorMessage.Invoke("Socket error: " + ex.Message);
             return string.Empty;
         }
         // Catch JsonException if an issue occurs with serialization or deserialization of request or response
         catch (JsonException ex)
-        {;
-            Console.WriteLine("JSON error: " + ex.Message);
+        {
+            ErrorMessage.Invoke("JSON error: " + ex.Message);
             return string.Empty;
         }
         // General exception handler block
         catch (Exception ex)
         {
-            Console.WriteLine($"Unexpected error: {ex.Message}");
+            ErrorMessage.Invoke($"Unexpected error: {ex.Message}");
             return string.Empty;
         }
     }
@@ -133,11 +132,9 @@ public class ServerRequestHandler(
     {
         try
         {
-            // Attempts the GetPublicKey operation up to 5 times.
-            // If, after this, the PublicKey is still null or empty, errors and returns. 
+            // Tries to get the public key 5 times and errors if we can't
             for (var retryCount = 0; retryCount < 5;  retryCount++)
             {
-                // Retries GetPublicKey operation up to 5 times before failing.
                 if (string.IsNullOrEmpty(PublicKey))
                 {
                     await GetPublicKey(mpan);
@@ -150,7 +147,7 @@ public class ServerRequestHandler(
 
             if (string.IsNullOrEmpty(PublicKey))
             {
-                Console.WriteLine("Failed to retrieve public key.");
+                ErrorMessage.Invoke("Failed to retrieve public key.");
                 return;
             }
 
@@ -173,8 +170,7 @@ public class ServerRequestHandler(
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.Message);
-            // Maybe add error page later
+            ErrorMessage.Invoke(ex.Message);
         }
     }
 
@@ -204,10 +200,5 @@ public class ServerRequestHandler(
             ErrorMessage.Invoke(ex.Message);
             return null;
         }
-
-        //check the requestype
-        // get the response data, convert to string
-        // populate the MeterReading Model class
-        //display on Screen
     }
 }

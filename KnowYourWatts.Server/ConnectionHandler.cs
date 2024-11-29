@@ -4,9 +4,7 @@ using System.Net.Sockets;
 using System.Text;
 using KnowYourWatts.Server.DTO.Requests;
 using KnowYourWatts.Server.DTO.Enums;
-using System.Net.WebSockets;
 using KnowYourWatts.Server.DTO.Responses;
-using System;
 
 namespace KnowYourWatts.Server;
 
@@ -31,6 +29,7 @@ public sealed class ConnectionHandler(
                 Console.WriteLine("No target address for a response was provided from the received request.");
                 return;
             }
+
             int bytesReceived = handler.Receive(buffer);
 
             //Check we received some data from the client
@@ -77,7 +76,6 @@ public sealed class ConnectionHandler(
                 handler.Send(reponse);
                 return;
             }
-            //end
 
             var decryptedMpan = _keyHandler.DecryptClientMpan(request.EncryptedMpan);
 
@@ -105,17 +103,18 @@ public sealed class ConnectionHandler(
         catch (SocketException ex)
         {
             Console.WriteLine("Socket error: " + ex.Message);
-            return;
         }
         catch (JsonReaderException ex)
         {
             Console.WriteLine($"JSON Reader Error: {ex}");
-            return;
+            var response = Encoding.ASCII.GetBytes("An error occured when trying to deserialise the JSON");
+            handler.Send(response);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error handling connection: {ex}");
-            return;
+            var response = Encoding.ASCII.GetBytes("An unknown error occured when handling the request.");
+            handler.Send(response);
         }
     }
 
