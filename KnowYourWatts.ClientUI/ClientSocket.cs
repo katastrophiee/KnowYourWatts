@@ -3,14 +3,11 @@ using System.Net.Sockets;
 
 namespace KnowYourWatts.ClientUI;
 
-public class ClientSocket(
-    IPAddress ipAddress,
-    IPEndPoint remoteEndPoint)
+public class ClientSocket(IPAddress ipAddress, IPEndPoint remoteEndPoint)
 {
-    public Socket Socket { get; set; }
+    public Socket Socket { get; set; } = null!;
     public IPAddress IPAddress { get; set; } = ipAddress;
     public IPEndPoint RemoteEndPoint { get; set; } = remoteEndPoint;
-
 
     public async Task ConnectClientToServer()
     {

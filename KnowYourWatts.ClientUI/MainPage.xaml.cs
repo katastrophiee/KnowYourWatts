@@ -1,8 +1,6 @@
 ﻿using KnowYourWatts.ClientUI.DTO.Enums;
 using KnowYourWatts.ClientUI.DTO.Models;
 using KnowYourWatts.ClientUI.Interfaces;
-using System.Text;
-using System.Timers;
 
 namespace KnowYourWatts.ClientUI;
 
@@ -19,12 +17,11 @@ public partial class MainPage : ContentPage
     private TariffType TariffType;
     private decimal StandingCharge;
     private string Mpan;
-    private string PublicKey;
     private byte[] EncryptedMpan;
 
     private DateTime LastUpdatedDate = DateTime.Now.Date;
 
-    private Button _activeTab = null!; // Reference to the active tab
+    private Button _activeTab = null!;
 
     public MainPage(IRandomisedValueProvider randomisedValueProvider, IServerRequestHandler serverRequestHandler, IEncryptionHelper encryptionHelper)
     {
@@ -66,6 +63,7 @@ public partial class MainPage : ContentPage
     private void StartClock()
     {
         var clockTimer = new System.Timers.Timer(1000) { AutoReset = true };
+
         clockTimer.Elapsed += (sender, e) =>
         {
             MainThread.BeginInvokeOnMainThread(() =>
@@ -74,6 +72,7 @@ public partial class MainPage : ContentPage
                 CheckAndUpdateDailyUsage();
             });
         };
+
         clockTimer.Start();
     }
 
@@ -129,10 +128,7 @@ public partial class MainPage : ContentPage
                 //move at some point
                 CurrentMeterReading.Usage += _randomisedValueProvider.GenerateRandomReading();
 
-                await MainThread.InvokeOnMainThreadAsync(() =>
-                {
-                    RefreshActiveTab(); // Refresh the active tab only
-                });
+                await MainThread.InvokeOnMainThreadAsync(RefreshActiveTab);
             }
         }
         catch (Exception ex)
@@ -163,6 +159,7 @@ public partial class MainPage : ContentPage
     private void CheckAndUpdateDailyUsage()
     {
         var currentDate = DateTime.Now.Date;
+
         if (currentDate > LastUpdatedDate)
         {
             LastUpdatedDate = currentDate;
@@ -173,7 +170,7 @@ public partial class MainPage : ContentPage
                 Usage = _randomisedValueProvider.GenerateRandomReading()
             };
 
-            MainThread.BeginInvokeOnMainThread(() => RefreshActiveTab());
+            MainThread.BeginInvokeOnMainThread(RefreshActiveTab);
         }
     }
 
@@ -185,9 +182,7 @@ public partial class MainPage : ContentPage
     private void OnTabClicked(object sender, EventArgs e)
     {
         if (sender is Button clickedButton)
-        {
             SelectTab(clickedButton, clickedButton.Text);
-        }
     }
 
     private void SelectTab(Button selectedButton, string tabName)
@@ -201,7 +196,8 @@ public partial class MainPage : ContentPage
 
         selectedButton.BackgroundColor = Color.FromArgb("#345365");
 
-        RefreshActiveTab(); // Update display for the selected tab
+        // Update display for the selected tab
+        RefreshActiveTab(); 
     }
 
     private void ShowError(string message)

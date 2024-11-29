@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using KnowYourWatts.ClientUI.Interfaces;
+using System.Text;
 
 namespace KnowYourWatts.ClientUI;
 
