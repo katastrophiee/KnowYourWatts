@@ -12,18 +12,18 @@ namespace KnowYourWatts.Server;
 
 public sealed class ConnectionHandler(
     ICalculationProvider calculationProvider,
-    IKeyHandler keyHandler) : IConnectionHandler
+    ICertificateHandler certificateHandler) : IConnectionHandler
 {
     //We use dependency injection to ensure we follow the SOLID principles
     private readonly ICalculationProvider _calculationProvider = calculationProvider;
-    private readonly IKeyHandler _keyHandler = keyHandler;
+    private readonly ICertificateHandler _certificateHandler = certificateHandler;
 
     public void HandleConnection(Socket handler)
     {
         try
         {
             // Prepared generated certificate to be sent by converting to base64 format
-            var exportedCert = _keyHandler.Certificate.Export(X509ContentType.Cert);
+            var exportedCert = _certificateHandler.Certificate.Export(X509ContentType.Cert);
             var base64Cert = Convert.ToBase64String(exportedCert);
 
             byte[] buffer = new byte[2048];
@@ -83,7 +83,7 @@ public sealed class ConnectionHandler(
                 return;
             }
 
-            var decryptedMpan = _keyHandler.DecryptClientMpan(request.EncryptedMpan);
+            var decryptedMpan = _certificateHandler.DecryptClientMpan(request.EncryptedMpan);
 
             // If decrypted MPAN does not match request MPAN, return error as may have wrong key.
             if (request.Mpan != decryptedMpan)

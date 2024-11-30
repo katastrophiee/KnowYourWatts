@@ -5,14 +5,11 @@ using System.Text;
 
 namespace KnowYourWatts.Server;
 
-public sealed class KeyHandler : IKeyHandler
+public sealed class CertificateHandler : ICertificateHandler
 {
-    public static RSA CryptographyKey { get; set; } = null!;
-    public X509Certificate2? Certificate { get; set; }
-
-    public KeyHandler()
+    public X509Certificate2 Certificate { get; set; }
+    public CertificateHandler()
     {
-        CryptographyKey = RSA.Create();
 
         // Generate the certificate
         Certificate = GenerateSelfSignedCertificate();
@@ -69,7 +66,7 @@ public sealed class KeyHandler : IKeyHandler
 
     // This method generates a certificate. Self signing is used in the development context due to
     // inability to acquire a signed certificate, but an authentic signed certificate is important for real world application
-    private static X509Certificate2 GenerateSelfSignedCertificate()
+    public X509Certificate2 GenerateSelfSignedCertificate()
     {
         var subjectName = new X500DistinguishedName("CN=KnowYourWattsServer");
 
