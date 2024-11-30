@@ -117,7 +117,6 @@ public partial class MainPage : ContentPage
     {
         try
         {
-
             var response = await _serverRequestHandler.SendRequestToServer(
                 CurrentMeterReading.Usage,
                 CurrentMeterReading.Cost,
@@ -146,9 +145,7 @@ public partial class MainPage : ContentPage
 
                 //move at some point
                 CurrentMeterReading.Usage = _randomisedValueProvider.GenerateRandomReading();
-
             }
-               
             await MainThread.InvokeOnMainThreadAsync(RefreshActiveTab);
         }
         catch (Exception ex)

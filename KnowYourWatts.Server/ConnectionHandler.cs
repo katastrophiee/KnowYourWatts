@@ -120,5 +120,4 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider) 
             return new($"An unknown error occurred when trying to calculate the cost: {ex.Message}");
         }
     }
-
 }

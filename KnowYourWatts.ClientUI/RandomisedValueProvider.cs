@@ -14,7 +14,6 @@ class RandomisedValueProvider : IRandomisedValueProvider
         {
             mpan.Append(random.Next(0, 9));
         }
-
         return mpan.ToString();
        
     }
@@ -35,18 +34,14 @@ class RandomisedValueProvider : IRandomisedValueProvider
 
         return delay;
     }
+
     public int GenerateRandomTarrif()
     {
         var random = new Random();
         int tarrif = random.Next(0, 3);
         return tarrif;
     }
-    public int GenerateRandomBillingPeriod()
-    {
-        var random = new Random();
-        int billingPeriod = random.Next();
-        return billingPeriod;
-    }
+
     public decimal GenerateRandomStandingCharge()
     {
         var random = new Random();
