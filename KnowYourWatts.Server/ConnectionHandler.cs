@@ -61,7 +61,7 @@ public sealed class ConnectionHandler(
 
             if (request.RequestType == RequestType.PublicKey)
             {
-                // Send the public key to the client
+                // Send the certificate to the client
                 handler.Send(Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(base64Cert)));
                 return;
             }

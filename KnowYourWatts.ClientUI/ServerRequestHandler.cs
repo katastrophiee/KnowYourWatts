@@ -90,13 +90,13 @@ public class ServerRequestHandler(
                 return string.Empty;
             }
 
-            // Deserialize the public key
+            // Deserialize the certificate
             var certificateBase = JsonConvert.DeserializeObject<string>(response) ?? "";
 
             // If the deserialized response is null or whitespace, throw error as deserialization must have gone wrong
             if (string.IsNullOrWhiteSpace(certificateBase))
             {
-                ErrorMessage.Invoke("No public key was received from the server.");
+                ErrorMessage.Invoke("No certificate was received from the server.");
                 return string.Empty;
             }
 
