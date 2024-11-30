@@ -1,5 +1,6 @@
 ﻿using KnowYourWatts.Server.Interfaces;
 using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
 namespace KnowYourWatts.Server;
@@ -7,18 +8,15 @@ namespace KnowYourWatts.Server;
 public sealed class KeyHandler : IKeyHandler
 {
     public static RSA CryptographyKey { get; set; } = null!;
-    public string PublicKey { get; set; } = null!;
-    private static RSAParameters PrivateKey;
-    private const string ContainerName = "ServKeyContainer";
+    public X509Certificate2? Certificate { get; set; }
 
     public KeyHandler()
     {
         CryptographyKey = RSA.Create();
 
-        PublicKey = Convert.ToBase64String(CryptographyKey.ExportRSAPublicKey());
-        PrivateKey = CryptographyKey.ExportParameters(true);
+        // Generate the certificate
+        Certificate = GenerateSelfSignedCertificate();
 
-        SaveKeyInContainer(ContainerName);
     }
 
     // Public entry point
@@ -49,18 +47,15 @@ public sealed class KeyHandler : IKeyHandler
     // Decrypts the MPAN by applying the private key after retrieving it from a secure
     // container. This is the actual function for decryption which should be hidden, hence the private
     // modifier to public method ReceiveData.
-    private static byte[] DecryptData(byte[] data)
+    private byte[] DecryptData(byte[] data)
     {
         try
         {
             byte[] decryptedData;
-            using (var rsa = new RSACryptoServiceProvider())
+            using RSA rsa = Certificate.GetRSAPrivateKey();
             {
-                // Import parameters from the secure container
-                rsa.ImportParameters(GetKeyFromContainer(ContainerName));
-
-                // Decrypt the data using the private key. Ensure the padding matches the encryption padding.
-                decryptedData = rsa.Decrypt(data, RSAEncryptionPadding.Pkcs1); // Adjust padding as needed
+                // Decrypt the data using the private key. Applies same padding as used during encryption
+                decryptedData = rsa.Decrypt(data, RSAEncryptionPadding.Pkcs1); 
             }
 
             return decryptedData;
@@ -72,32 +67,19 @@ public sealed class KeyHandler : IKeyHandler
         }
     }
 
-    private static void SaveKeyInContainer(string containerName)
+    // This method generates a certificate. Self signing is used in the development context due to
+    // inability to acquire a signed certificate, but an authentic signed certificate is important for real world application
+    private static X509Certificate2 GenerateSelfSignedCertificate()
     {
-        // CspParameters only works on Windows? What is the alternative?
-        var cspParams = new CspParameters
-        {
-            KeyContainerName = containerName,
-            Flags = CspProviderFlags.UseMachineKeyStore // Optional: use machine-level key store
-        };
+        var subjectName = new X500DistinguishedName("CN=KnowYourWattsServer");
 
-        using (RSACryptoServiceProvider rsaProvider = new RSACryptoServiceProvider(cspParams))
-        {
-            rsaProvider.PersistKeyInCsp = true;
-            rsaProvider.ImportParameters(PrivateKey);
-        }
-    }
+        using var rsa = RSA.Create(1024);
+        var request = new CertificateRequest(subjectName, rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
 
-    private static RSAParameters GetKeyFromContainer(string containerName)
-    {
-        // Only works on windows
-        var cspParams = new CspParameters
-        {
-            KeyContainerName = containerName,
-            Flags = CspProviderFlags.UseMachineKeyStore // Optional: use machine-level key store
-        };
+        // Create a self-signed certificate
+        var certificate = request.CreateSelfSigned(DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(5));
 
-        using RSACryptoServiceProvider rsaProvider = new(cspParams);
-        return rsaProvider.ExportParameters(true);
+        // Return the generated certificate
+        return new X509Certificate2(certificate.Export(X509ContentType.Pfx));
     }
 }

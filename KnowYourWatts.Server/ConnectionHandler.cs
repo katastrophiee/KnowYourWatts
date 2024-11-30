@@ -5,6 +5,8 @@ using System.Text;
 using KnowYourWatts.Server.DTO.Requests;
 using KnowYourWatts.Server.DTO.Enums;
 using KnowYourWatts.Server.DTO.Responses;
+using Org.BouncyCastle.Tls;
+using System.Security.Cryptography.X509Certificates;
 
 namespace KnowYourWatts.Server;
 
@@ -20,7 +22,11 @@ public sealed class ConnectionHandler(
     {
         try
         {
-            byte[] buffer = new byte[1024];
+            // Prepared generated certificate to be sent by converting to base64 format
+            var exportedCert = _keyHandler.Certificate.Export(X509ContentType.Cert);
+            var base64Cert = Convert.ToBase64String(exportedCert);
+
+            byte[] buffer = new byte[2048];
 
             //Ensure we are connected to the client and can respond to them
             if (!handler.Connected || handler.RemoteEndPoint is null)
@@ -56,7 +62,7 @@ public sealed class ConnectionHandler(
             if (request.RequestType == RequestType.PublicKey)
             {
                 // Send the public key to the client
-                handler.Send(Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(_keyHandler.PublicKey)));
+                handler.Send(Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(base64Cert)));
                 return;
             }
 
