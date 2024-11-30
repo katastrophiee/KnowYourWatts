@@ -13,5 +13,5 @@ public interface IUsageRequest
     public decimal StandingCharge { get; set; }
 
     public int BillingPeriod { get; set; }
-    public RequestType RequestType { get; set; }
+  
 }   

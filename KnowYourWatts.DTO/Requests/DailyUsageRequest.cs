@@ -1,7 +1,7 @@
 ﻿using KnowYourWatts.Server.DTO.Enums;
 
 namespace KnowYourWatts.Server.DTO.Requests;
-
+//Class not needed
 public class DailyUsageRequest : IUsageRequest
 {
     public TariffType TariffType { get; set; }
@@ -13,5 +13,5 @@ public class DailyUsageRequest : IUsageRequest
     public int BillingPeriod { get; set; }
 
     public decimal StandingCharge { get; set; }
-    public RequestType RequestType { get; set; }
+   
 }

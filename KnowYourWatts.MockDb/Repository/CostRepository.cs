@@ -21,11 +21,11 @@ public class CostRepository : ICostRepository
 
         if (existingTotalCost is not null)
         {
-            newTotalCost += existingTotalCost.TotalCost;
+            //newTotalCost += existingTotalCost.TotalCost;
             ClientCosts.Remove(existingTotalCost);
         }
 
-        ClientCosts.Add(new ClientCost { Mpan = mpan, TotalCost = newTotalCost, RequestType = requestType });
+        ClientCosts.Add(new ClientCost { Mpan = mpan, TotalCost = Math.Round(newTotalCost,2,MidpointRounding.AwayFromZero), RequestType = requestType });
     }
 
     public decimal? GetPreviousTotalCostByMpanAndReqType(string mpan, RequestType requestType)

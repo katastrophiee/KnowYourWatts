@@ -18,7 +18,6 @@ public partial class MainPage : ContentPage
     private decimal StandingCharge;
     private string Mpan;
 
-    private DateTime LastUpdatedDate = DateTime.Now.Date;
 
     private Button _activeTab = null!; // Reference to the active tab
 
@@ -57,9 +56,8 @@ public partial class MainPage : ContentPage
 
         SelectTab(CurrentUsageTab, "Current Usages");
         StartClock(); // Start clock independently
-      //  StartRandomCurrentReadingTimer();
-        StartRandomDailyReadingTimer();
-        //StartRandomWeeklyReadingTimer();
+        StartRandomCurrentReadingTimer();
+        StartRandomWeeklyReadingTimer();
     }
 
     private void StartClock()
@@ -70,7 +68,6 @@ public partial class MainPage : ContentPage
             MainThread.BeginInvokeOnMainThread(() =>
             {
                 UpdateTimeDisplay();
-                CheckAndUpdateDailyUsage();
             });
         };
         clockTimer.Start();
@@ -89,38 +86,9 @@ public partial class MainPage : ContentPage
             await MainThread.InvokeOnMainThreadAsync(async () =>
             {
                 await SendCurrentReadingToServer();
-            });
-            /* ThreadPool.QueueUserWorkItem(async _ =>
-             {
-                 await SendReadingToServer();
-             });*/
-        };
-
-        timer.Start();
-    }
-
-    private void StartRandomDailyReadingTimer()
-    {
-        var timer = new System.Timers.Timer
-        {
-            Interval = 1000,//_randomisedValueProvider.GenerateRandomTimeDelay(),
-            AutoReset = true
-        };
-
-        timer.Elapsed += async (sender, e) =>
-        {
-            await MainThread.InvokeOnMainThreadAsync(async () =>
-            {
                 await SendReadingToServerDaily();
-            });
-          /*  await Task.Run(async () =>
-            {
-                await SendReadingToServerDaily();
-            });*/
-            /*ThreadPool.QueueUserWorkItem(async _ =>
-            {
-                await SendReadingToServerDaily();
-            });*/
+            }); 
+            
         };
 
         timer.Start();
@@ -136,18 +104,11 @@ public partial class MainPage : ContentPage
 
         timer.Elapsed += async (sender, e) =>
         {
-            /*await MainThread.InvokeOnMainThreadAsync(async () =>
-            {
-                await SendReadingToServerWeekly();
-            });*/
-            await Task.Run(async () =>
+            await MainThread.InvokeOnMainThreadAsync(async () =>
             {
                 await SendReadingToServerWeekly();
             });
-            /* ThreadPool.QueueUserWorkItem(async _ =>
-             {
-                 await SendReadingToServerWeekly();
-             });*/
+            
         };
 
         timer.Start();
@@ -182,7 +143,7 @@ public partial class MainPage : ContentPage
 
             else if (response.Cost is not null)
             {
-                CurrentMeterReading.Cost += response.Cost.Value;
+                CurrentMeterReading.Cost = response.Cost.Value;
 
                 //move at some point
                 CurrentMeterReading.Usage = _randomisedValueProvider.GenerateRandomReading();
@@ -228,7 +189,7 @@ public partial class MainPage : ContentPage
                 DailyMeterReading.Cost += response.Cost.Value;
 
                 //move at some point
-                DailyMeterReading.Usage += _randomisedValueProvider.GenerateRandomReading();
+                DailyMeterReading.Usage += CurrentMeterReading.Usage;
             }
             
             await MainThread.InvokeOnMainThreadAsync(RefreshActiveTab);
@@ -270,7 +231,7 @@ public partial class MainPage : ContentPage
                 WeeklyMeterReading.Cost += response.Cost.Value;
 
                 //move at some point to it's own timer
-                //WeeklyMeterReading.Usage = response.Usage.Value;
+                WeeklyMeterReading.Usage += DailyMeterReading.Usage;
             }
 
             await MainThread.InvokeOnMainThreadAsync(RefreshActiveTab);
@@ -299,24 +260,6 @@ public partial class MainPage : ContentPage
             UsageKW.Text = $"{WeeklyMeterReading.Usage}KW";
         }
     }
-
-    private void CheckAndUpdateDailyUsage()
-    {
-        var currentDate = DateTime.Now.Date;
-        if (currentDate > LastUpdatedDate)
-        {
-            LastUpdatedDate = currentDate;
-
-            DailyMeterReading = new MeterReadings
-            {
-                Cost = 0,
-                Usage = _randomisedValueProvider.GenerateRandomReading()
-            };
-
-            MainThread.BeginInvokeOnMainThread(RefreshActiveTab);
-        }
-    }
-
     private void UpdateTimeDisplay()
     {
         TimeDisplay.Text = DateTime.Now.ToString("HH:mm");

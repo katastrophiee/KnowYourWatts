@@ -13,14 +13,17 @@ public class ServerRequestHandler : IServerRequestHandler
 {
     private readonly ClientSocket _clientSocket;
     public event Action<string> ErrorMessage = null!;
-    private readonly bool RunProcessQueue = true;
-    private readonly BlockingCollection<ServerRequest> _requestQueue = [];
-    private TaskCompletionSource<SmartMeterCalculationResponse?>? _response = null!;
+
+    private bool RunProcessQueue;
+    private readonly ConcurrentQueue<ServerRequest> _requestQueue = new ConcurrentQueue<ServerRequest>();
+    private readonly ConcurrentDictionary<ServerRequest, TaskCompletionSource<SmartMeterCalculationResponse?>> _pendingResponses = new();
+    //private TaskCompletionSource<SmartMeterCalculationResponse?>? _response = null!;
+    private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
     public ServerRequestHandler(ClientSocket clientSocket)
     {
         _clientSocket = clientSocket;
-        Task.Run(ProcessQueue);
+        //Task.Run(ProcessQueue);
     }
 
     // Entry point for the UI to send a request to the server
@@ -35,37 +38,20 @@ public class ServerRequestHandler : IServerRequestHandler
     {
         //Create the request for the data
         var request = new CurrentUsageRequest(tariffType, initialReading, currentCost, billingPeriod, standingCharge);
-
-        _response = new TaskCompletionSource<SmartMeterCalculationResponse?>();
-
-        QueueRequestForServer(mpan, requestType, request);
-
-        return await _response.Task;
-    }
-
-
-    private async Task QueueRequestForServer<T>(string mpan, RequestType requestType, T request) where T : IUsageRequest
-    {
-        
-        try
+        var serverRequest = new ServerRequest
         {
-            // Create the request for the server
-            var serverRequest = new ServerRequest
-            {
-                Mpan = mpan,
-                RequestType = requestType,
-                Data = JsonConvert.SerializeObject(request)
-            };
+            Mpan = mpan,
+            RequestType = requestType,
+            Data = JsonConvert.SerializeObject(request)
+        };
+        var tcs = new TaskCompletionSource<SmartMeterCalculationResponse>();
+        _pendingResponses[serverRequest] =  tcs;
+        _requestQueue.Enqueue(serverRequest);
 
-            // Add it to the queue
-            _requestQueue.Add(serverRequest);
-        }
-        catch (Exception ex)
-        {
-            ErrorMessage.Invoke(ex.Message);
-        }
-    }
+       await Task.Run(() => ProcessQueue(_cancellationTokenSource.Token));
 
+        return await tcs.Task;
+    } 
     private async Task<SmartMeterCalculationResponse?> HandleServerResponse()
     {
         try
@@ -96,40 +82,53 @@ public class ServerRequestHandler : IServerRequestHandler
             return null;
         }
     }
-
-    private async Task ProcessQueue()
+    private async Task ProcessQueue(CancellationToken cancellationToken)
     {
-        // Ensure the queue is always being processed
-        while (RunProcessQueue)
+
+        if (!RunProcessQueue)
         {
-            // Iterate through each item in the queue
-            foreach (var request in _requestQueue.GetConsumingEnumerable())
+            RunProcessQueue = true;
+            while (_requestQueue.TryDequeue(out var request))
             {
-                try
+                if (cancellationToken.IsCancellationRequested)
                 {
-                    // Connect to the server
-                    await _clientSocket.ConnectClientToServer();
-
-                    // Send our request to the server
-                    var data = Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(request));
-                    await _clientSocket.Socket.SendAsync(data);
-
-                    // Handle the response from the server
-                    var response = await HandleServerResponse();
-
-                    // Set the response to this task as the request has been completed
-                    _response?.SetResult(response);
+                    break;
                 }
-                catch (Exception ex)
+                if(_pendingResponses.TryRemove(request,out var tcs))
                 {
-                    _response = null;
-                    ErrorMessage.Invoke(ex.Message);
+                    try
+                    {
+                        // Connect to the server
+                        await _clientSocket.ConnectClientToServer();
+
+                        // Send our request to the server
+                        var data = Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(request));
+                        await _clientSocket.Socket.SendAsync(data);
+
+                        // Handle the response from the server
+                        var response = await HandleServerResponse();
+
+                        // Set the response to this task as the request has been completed
+                       tcs?.SetResult(response);
+                    }
+                    catch (Exception ex)
+                    {
+                        if (tcs != null)
+                        {
+                            tcs.SetException(ex);
+                        }
+                        ErrorMessage.Invoke(ex.Message);
+                    }
+                    finally
+                    {
+                        tcs = null;
+
+
+                    }
                 }
-                finally
-                {
-                    _response = null;
-                }
+               
             }
+            RunProcessQueue = false;
         }
     }
 }

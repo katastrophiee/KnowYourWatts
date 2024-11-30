@@ -13,5 +13,5 @@ public sealed class CurrentUsageRequest : IUsageRequest
     public int BillingPeriod { get; set; }
 
     public decimal StandingCharge { get; set; }
-    public RequestType RequestType { get; set; }
+ 
 }

@@ -58,15 +58,11 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider) 
                 handler.Send(response);
                 return;
             }
+           
+            CalculationResponse calculationResponse;
+            var currentUsageRequest = JsonConvert.DeserializeObject<CurrentUsageRequest>(request.Data);
+            calculationResponse = CalculateUsage(request.Mpan, request.RequestType, currentUsageRequest);
 
-            //Based on our request type, we want to convert the string of JSON in the data property to the correct object
-            var calculationResponse = request.RequestType switch
-            {
-                RequestType.CurrentUsage => CalculateCurrentUsage(request.Mpan, JsonConvert.DeserializeObject<CurrentUsageRequest>(request.Data)),
-                RequestType.TodaysUsage => CalculateDailyUsage(request.Mpan, JsonConvert.DeserializeObject<DailyUsageRequest>(request.Data)),
-                RequestType.WeeklyUsage => CalculateWeeklyUsage(request.Mpan, JsonConvert.DeserializeObject<WeeklyUsageRequest>(request.Data)),
-                _ => new($"The request type {request.RequestType} was not recognized.")
-            };
 
             if (!string.IsNullOrEmpty(calculationResponse.ErrorMessage))
                 Console.WriteLine(calculationResponse.ErrorMessage);
@@ -95,7 +91,7 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider) 
 
     private static string SerializeErrorResponse(string errorMessage) => JsonConvert.SerializeObject(new CalculationResponse(errorMessage));
 
-    private CalculationResponse CalculateUsage<T>(string mpan, T? request) where T : IUsageRequest
+    private CalculationResponse CalculateUsage<T>(string mpan, RequestType requestType, T? request) where T : IUsageRequest
     {
         try
         {
@@ -111,7 +107,7 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider) 
                 CurrentCost = request.CurrentCost,
                 BillingPeriod = request.BillingPeriod,
                 StandingCharge = request.StandingCharge,
-                RequestType = request.RequestType
+                RequestType = requestType
             };
 
             //Calculate the cost of the electricity used
@@ -125,9 +121,4 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider) 
         }
     }
 
-    private CalculationResponse CalculateCurrentUsage(string mpan, CurrentUsageRequest? request) => CalculateUsage(mpan, request);
-
-    private CalculationResponse CalculateDailyUsage(string mpan, DailyUsageRequest? request) => CalculateUsage(mpan, request);
-
-    private CalculationResponse CalculateWeeklyUsage(string mpan, WeeklyUsageRequest? request) => CalculateUsage(mpan, request);
 }
