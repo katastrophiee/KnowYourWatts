@@ -77,7 +77,7 @@ public partial class MainPage : ContentPage
     {
         var timer = new System.Timers.Timer
         {
-            Interval = 1000,//_randomisedValueProvider.GenerateRandomTimeDelay(),
+            Interval = _randomisedValueProvider.GenerateRandomTimeDelay(),
             AutoReset = true
         };
 
@@ -93,12 +93,12 @@ public partial class MainPage : ContentPage
 
         timer.Start();
     }
-
     private void StartRandomWeeklyReadingTimer()
     {
+        //run every hour
         var timer = new System.Timers.Timer
         {
-            Interval = 1000,//_randomisedValueProvider.GenerateRandomTimeDelay(),
+            Interval = (60*60*1000),
             AutoReset = true
         };
 
@@ -113,7 +113,6 @@ public partial class MainPage : ContentPage
 
         timer.Start();
     }
-
     private async Task SendCurrentReadingToServer()
     {
         try

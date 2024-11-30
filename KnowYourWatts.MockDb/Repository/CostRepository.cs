@@ -21,7 +21,6 @@ public class CostRepository : ICostRepository
 
         if (existingTotalCost is not null)
         {
-            //newTotalCost += existingTotalCost.TotalCost;
             ClientCosts.Remove(existingTotalCost);
         }
 

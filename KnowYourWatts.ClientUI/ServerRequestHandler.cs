@@ -17,13 +17,11 @@ public class ServerRequestHandler : IServerRequestHandler
     private bool RunProcessQueue;
     private readonly ConcurrentQueue<ServerRequest> _requestQueue = new ConcurrentQueue<ServerRequest>();
     private readonly ConcurrentDictionary<ServerRequest, TaskCompletionSource<SmartMeterCalculationResponse?>> _pendingResponses = new();
-    //private TaskCompletionSource<SmartMeterCalculationResponse?>? _response = null!;
     private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
     public ServerRequestHandler(ClientSocket clientSocket)
     {
         _clientSocket = clientSocket;
-        //Task.Run(ProcessQueue);
     }
 
     // Entry point for the UI to send a request to the server
@@ -44,11 +42,13 @@ public class ServerRequestHandler : IServerRequestHandler
             RequestType = requestType,
             Data = JsonConvert.SerializeObject(request)
         };
+
         var tcs = new TaskCompletionSource<SmartMeterCalculationResponse>();
         _pendingResponses[serverRequest] =  tcs;
-        _requestQueue.Enqueue(serverRequest);
 
-       await Task.Run(() => ProcessQueue(_cancellationTokenSource.Token));
+        //adds request in a queue and processes the requests concurrently.
+        _requestQueue.Enqueue(serverRequest);
+        await Task.Run(() => ProcessQueue(_cancellationTokenSource.Token));
 
         return await tcs.Task;
     } 
@@ -125,8 +125,7 @@ public class ServerRequestHandler : IServerRequestHandler
 
 
                     }
-                }
-               
+                }      
             }
             RunProcessQueue = false;
         }
