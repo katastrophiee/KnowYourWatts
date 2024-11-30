@@ -8,7 +8,7 @@ using NSubstitute;
 
 namespace KnowYourWatts.Tests;
 
-/*internal sealed class CalculateCostTests
+internal sealed class CalculateCostTests
 {
     private ITariffRepository _tariffRepository = null!;
     private CalculationProvider _calculationProvider = null!;
@@ -241,7 +241,8 @@ namespace KnowYourWatts.Tests;
     /// Test to ensure that an error message is returned when the tariff type recieved is not recognised
     /// </summary>
     [Test]
-    public void ErrorWhenTariffTypePriceNotFound() {
+    public void ErrorWhenTariffTypePriceNotFound()
+    {
         //Arrange
         _tariffRepository.GetTariffPriceByType(Arg.Any<TariffType>()).Returns(null as TariffTypeAndPrice);
 
@@ -326,4 +327,3 @@ namespace KnowYourWatts.Tests;
         });
     }
 }
-*/

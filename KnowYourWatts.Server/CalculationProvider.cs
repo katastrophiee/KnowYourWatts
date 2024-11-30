@@ -57,8 +57,7 @@ public sealed class CalculationProvider(
 
             //We round the total cost to 2 decimal places to match what the website returns
             var totalCost = Math.Round(totalCostWithVat, 2, MidpointRounding.AwayFromZero);
-            //var totalCost = totalCostWithVat;
-          //  var totalCost = decimal.Round(totalCostWithVat,2);
+
             if (request.RequestType == RequestType.TodaysUsage || request.RequestType == RequestType.WeeklyUsage)
             {
                 var previousTotalCost = _costRepository.GetPreviousTotalCostByMpanAndReqType(request.Mpan, request.RequestType);
