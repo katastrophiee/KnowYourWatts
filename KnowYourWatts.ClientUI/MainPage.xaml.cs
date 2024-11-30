@@ -142,17 +142,17 @@ public partial class MainPage : ContentPage
         if (_activeTab == CurrentUsageTab)
         {
             UsageCost.Text = $"£{CurrentMeterReading.Cost}";
-            UsageKW.Text = $"{CurrentMeterReading.Usage}KW";
+            UsageKW.Text = $"{decimal.Round(CurrentMeterReading.Usage,2)}KW";
         }
         else if (_activeTab == TodayUsageTab)
         {
             UsageCost.Text = $"£{DailyMeterReading.Cost}";
-            UsageKW.Text = $"{DailyMeterReading.Usage}KW";
+            UsageKW.Text = $"{decimal.Round(DailyMeterReading.Usage,2)}KW";
         }
         else if (_activeTab == WeekUsageTab)
         {
             UsageCost.Text = $"£{WeeklyMeterReading.Cost}";
-            UsageKW.Text = $"{WeeklyMeterReading.Usage}KW";
+            UsageKW.Text = $"{decimal.Round(WeeklyMeterReading.Usage, 2)}KW";
         }
     }
 
