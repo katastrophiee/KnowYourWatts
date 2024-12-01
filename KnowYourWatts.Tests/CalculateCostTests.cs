@@ -52,21 +52,25 @@ internal sealed class CalculateCostTests
     /// Test to ensure that cost calculations are correct for fixed tariff types
     /// This website is used to determine the expected results: https://www.electricitybillcalculator.com/
     /// </summary>
-    [TestCase(10, 20, 1, 45, 3.05)]
-    [TestCase(1, 2, 3, 0, 0.26)]
-    [TestCase(78, 546, 7, 496, 156.85)]
-    public void EnsureFixedCalculationsAreCorrect(
+    [TestCase(10, 20, 1, 45, RequestType.TodaysUsage, 3.05)]
+    [TestCase(1, 2, 3, 0, RequestType.TodaysUsage, 0.26)]
+    [TestCase(78, 546, 7, 496, RequestType.TodaysUsage, 156.85)]
+    [TestCase(10, 20, 1, 45, RequestType.WeeklyUsage, 3.05)]
+    [TestCase(1, 2, 3, 0, RequestType.WeeklyUsage, 0.26)]
+    [TestCase(78, 546, 7, 496, RequestType.WeeklyUsage, 156.85)]
+    public void EnsureFixedCalculationsAreCorrectDailyAndWeekly(
         decimal previousReading,
         decimal currentReading,
         int billingPeriod,
         decimal standingCharge,
+        RequestType requestType,
         decimal expectedCostResult)
     {
         //Arrange
-        _previousReadingRepository.GetPreviousReadingByMpanAndReqType(Arg.Any<string>(), Arg.Any<RequestType>()).Returns(previousReading);
+        _previousReadingRepository.GetPreviousReadingByMpanAndReqType(Arg.Any<string>(), requestType).Returns(previousReading);
 
         _request.TariffType = TariffType.Fixed;
-
+        _request.RequestType = requestType;
         _request.CurrentReading = currentReading;
         _request.BillingPeriod = billingPeriod;
         _request.StandingCharge = standingCharge;
@@ -83,21 +87,25 @@ internal sealed class CalculateCostTests
     /// Test to ensure that cost calculations are correct for flex tariff types
     /// This website is used to determine the expected results: https://www.electricitybillcalculator.com/
     /// </summary>
-    [TestCase(10, 20, 1, 45, 3.22)]
-    [TestCase(1, 2, 3, 0, 0.28)]
-    [TestCase(78, 546, 7, 496, 165.20)]
-    public void EnsureFlexCalculationsAreCorrect(
+    [TestCase(10, 20, 1, 45,RequestType.TodaysUsage, 3.22)]
+    [TestCase(1, 2, 3, 0, RequestType.TodaysUsage, 0.28)]
+    [TestCase(78, 546, 7, 496, RequestType.TodaysUsage,165.20)]
+    [TestCase(10, 20, 1, 45, RequestType.WeeklyUsage, 3.22)]
+    [TestCase(1, 2, 3, 0, RequestType.WeeklyUsage, 0.28)]
+    [TestCase(78, 546, 7, 496, RequestType.WeeklyUsage, 165.20)]
+    public void EnsureFlexCalculationsAreCorrectDailyAndWeekly(
         decimal previousReading,
         decimal currentReading,
         int billingPeriod,
         decimal standingCharge,
+        RequestType requestType,
         decimal expectedCostResult)
     {
         //Arrange
-        _previousReadingRepository.GetPreviousReadingByMpanAndReqType(Arg.Any<string>(), Arg.Any<RequestType>()).Returns(previousReading);
+        _previousReadingRepository.GetPreviousReadingByMpanAndReqType(Arg.Any<string>(), requestType).Returns(previousReading);
 
         _request.TariffType = TariffType.Flex;
-
+        _request.RequestType = requestType;
         _request.CurrentReading = currentReading;
         _request.BillingPeriod = billingPeriod;
         _request.StandingCharge = standingCharge;
@@ -115,21 +123,25 @@ internal sealed class CalculateCostTests
     /// Test to ensure that cost calculations are correct for green tariff types
     /// This website is used to determine the expected results: https://www.electricitybillcalculator.com/
     /// </summary>
-    [TestCase(10, 20, 1, 45, 3.31)]
-    [TestCase(1, 2, 3, 0, 0.28)]
-    [TestCase(78, 546, 7, 496, 169.38)]
-    public void EnsureGreenCalculationsAreCorrect(
+    [TestCase(10, 20, 1, 45,RequestType.TodaysUsage, 3.31)]
+    [TestCase(1, 2, 3, 0, RequestType.TodaysUsage, 0.28)]
+    [TestCase(78, 546, 7, 496, RequestType.TodaysUsage,169.38)]
+    [TestCase(10, 20, 1, 45, RequestType.WeeklyUsage, 3.31)]
+    [TestCase(1, 2, 3, 0, RequestType.WeeklyUsage, 0.28)]
+    [TestCase(78, 546, 7, 496, RequestType.WeeklyUsage, 169.38)]
+    public void EnsureGreenCalculationsAreCorrectDailyAndWeekly(
         decimal previousReading,
         decimal currentReading,
         int billingPeriod,
         decimal standingCharge,
+        RequestType requestType,
         decimal expectedCostResult)
     {
         //Arrange
-        _previousReadingRepository.GetPreviousReadingByMpanAndReqType(Arg.Any<string>(), Arg.Any<RequestType>()).Returns(previousReading);
+        _previousReadingRepository.GetPreviousReadingByMpanAndReqType(Arg.Any<string>(), requestType).Returns(previousReading);
 
         _request.TariffType = TariffType.Green;
-
+        _request.RequestType = requestType;
         _request.CurrentReading = currentReading;
         _request.BillingPeriod = billingPeriod;
         _request.StandingCharge = standingCharge;
@@ -147,21 +159,25 @@ internal sealed class CalculateCostTests
     /// Test to ensure that cost calculations are correct for off peak tariff types
     /// This website is used to determine the expected results: https://www.electricitybillcalculator.com/
     /// </summary>
-    [TestCase(10, 20, 1, 45, 2.95)]
-    [TestCase(1, 2, 3, 0, 0.25)]
-    [TestCase(78, 546, 7, 496, 152.62)]
-    public void EnsureOffPeakCalculationsAreCorrect(
+    [TestCase(10, 20, 1, 45, RequestType.TodaysUsage, 2.95)]
+    [TestCase(1, 2, 3, 0, RequestType.TodaysUsage, 0.25)]
+    [TestCase(78, 546, 7,  496, RequestType.TodaysUsage, 152.62)]
+    [TestCase(10, 20, 1, 45, RequestType.WeeklyUsage, 2.95)]
+    [TestCase(1, 2, 3, 0, RequestType.WeeklyUsage, 0.25)]
+    [TestCase(78, 546, 7, 496, RequestType.WeeklyUsage,152.62)]
+    public void EnsureOffPeakCalculationsAreCorrectDailyAndWeekly(
         decimal previousReading,
         decimal currentReading,
         int billingPeriod,
         decimal standingCharge,
+        RequestType requestType,
         decimal expectedCostResult)
     {
         //Arrange
-        _previousReadingRepository.GetPreviousReadingByMpanAndReqType(Arg.Any<string>(), Arg.Any<RequestType>()).Returns(previousReading);
+        _previousReadingRepository.GetPreviousReadingByMpanAndReqType(Arg.Any<string>(),requestType).Returns(previousReading);
 
         _request.TariffType = TariffType.OffPeak;
-
+        _request.RequestType = requestType;
         _request.CurrentReading = currentReading;
         _request.BillingPeriod = billingPeriod;
         _request.StandingCharge = standingCharge;
@@ -219,12 +235,14 @@ internal sealed class CalculateCostTests
     /// <summary>
     /// Test to ensure that an error message is returned when the current total reading is less than the previous total reading
     /// </summary>
-    [Test]
-    public void ErrorWhenCurrentReadingLargerThanPrevious()
+    [TestCase(RequestType.TodaysUsage)]
+    [TestCase(RequestType.WeeklyUsage)]
+    public void ErrorWhenCurrentReadingLargerThanPrevious(RequestType requestType)
     {
         //Arrange
         _request.CurrentReading = 3;
-        _previousReadingRepository.GetPreviousReadingByMpanAndReqType(Arg.Any<string>(), Arg.Any<RequestType>()).Returns(6);
+        _request.RequestType = requestType;
+        _previousReadingRepository.GetPreviousReadingByMpanAndReqType(Arg.Any<string>(), requestType).Returns(6);
 
         //Act
         var result = _calculationProvider.CalculateCost(_request);
@@ -236,6 +254,7 @@ internal sealed class CalculateCostTests
             Assert.That(result.ErrorMessage, Is.EqualTo("Current energy reading cannot be less than previous energy reading."));
         });
     }
+ 
 
     /// <summary>
     /// Test to ensure that an error message is returned when the tariff type recieved is not recognised
