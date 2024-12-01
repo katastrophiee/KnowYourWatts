@@ -189,6 +189,120 @@ internal sealed class CalculateCostTests
         Assert.That(string.IsNullOrEmpty(result.ErrorMessage), Is.True);
         Assert.That(result.Cost, Is.EqualTo(expectedCostResult));
     }
+    /// <summary>
+    /// Test to ensure that cost calculations are correct for fixed tariff types
+    /// This website is used to determine the expected results: https://www.electricitybillcalculator.com/
+    /// </summary>
+    [TestCase(10,1, 45, 3.05)]
+    [TestCase(1, 3, 0, 0.26)]
+    [TestCase(468, 7, 496, 156.85)]  
+    public void EnsureFixedCalculationsAreCorrect(
+        decimal currentReading,
+        int billingPeriod,
+        decimal standingCharge,
+        decimal expectedCostResult)
+    {
+        //Arrange
+      
+
+        _request.TariffType = TariffType.Fixed;
+        _request.CurrentReading = currentReading;
+        _request.BillingPeriod = billingPeriod;
+        _request.StandingCharge = standingCharge;
+
+        //Act
+        var result = _calculationProvider.CalculateCost(_request);
+
+        //Assert
+        Assert.That(string.IsNullOrEmpty(result.ErrorMessage), Is.True);
+        Assert.That(result.Cost, Is.EqualTo(expectedCostResult));
+    }
+
+    /// <summary>
+    /// Test to ensure that cost calculations are correct for flex tariff types
+    /// This website is used to determine the expected results: https://www.electricitybillcalculator.com/
+    /// </summary>
+    [TestCase(10, 1, 45, 3.22)]
+    [TestCase(1, 3, 0, 0.28)]
+    [TestCase(468, 7, 496,165.20)]
+    public void EnsureFlexCalculationsAreCorrect(
+        decimal currentReading,
+        int billingPeriod,
+        decimal standingCharge,
+        decimal expectedCostResult)
+    {
+        //Arrange
+
+        _request.TariffType = TariffType.Flex;
+        _request.CurrentReading = currentReading;
+        _request.BillingPeriod = billingPeriod;
+        _request.StandingCharge = standingCharge;
+
+        //Act
+        var result = _calculationProvider.CalculateCost(_request);
+
+        //Assert
+        Assert.That(string.IsNullOrEmpty(result.ErrorMessage), Is.True);
+        Assert.That(result.Cost, Is.EqualTo(expectedCostResult));
+    }
+
+
+    /// <summary>
+    /// Test to ensure that cost calculations are correct for green tariff types
+    /// This website is used to determine the expected results: https://www.electricitybillcalculator.com/
+    /// </summary>
+    [TestCase(10, 1, 45, 3.31)]
+    [TestCase(1, 3, 0,0.28)]
+    [TestCase(468, 7, 496, 169.38)]
+    public void EnsureGreenCalculationsAreCorrectDailyAndWeekly(
+        decimal currentReading,
+        int billingPeriod,
+        decimal standingCharge,
+        decimal expectedCostResult)
+    {
+        //Arrange
+
+        _request.TariffType = TariffType.Green;
+        _request.CurrentReading = currentReading;
+        _request.BillingPeriod = billingPeriod;
+        _request.StandingCharge = standingCharge;
+
+        //Act
+        var result = _calculationProvider.CalculateCost(_request);
+
+        //Assert
+        Assert.That(string.IsNullOrEmpty(result.ErrorMessage), Is.True);
+        Assert.That(result.Cost, Is.EqualTo(expectedCostResult));
+    }
+
+
+    /// <summary>
+    /// Test to ensure that cost calculations are correct for off peak tariff types
+    /// This website is used to determine the expected results: https://www.electricitybillcalculator.com/
+    /// </summary>
+    [TestCase(10, 1, 45, 2.95)]
+    [TestCase(1, 3, 0,0.25)]
+    [TestCase(468, 7, 496,152.62)]
+    public void EnsureOffPeakCalculationsAreCorrectDailyAndWeekly(
+        decimal currentReading,
+        int billingPeriod,
+        decimal standingCharge,
+        decimal expectedCostResult)
+    {
+        //Arrange
+
+        _request.TariffType = TariffType.OffPeak;
+        _request.CurrentReading = currentReading;
+        _request.BillingPeriod = billingPeriod;
+        _request.StandingCharge = standingCharge;
+
+        //Act
+        var result = _calculationProvider.CalculateCost(_request);
+
+        //Assert
+        Assert.That(string.IsNullOrEmpty(result.ErrorMessage), Is.True);
+        Assert.That(result.Cost, Is.EqualTo(expectedCostResult));
+    }
 
     /// <summary>
     /// Test to ensure that the current reading is saved to the mock db as the new previous reading once calculations are done
