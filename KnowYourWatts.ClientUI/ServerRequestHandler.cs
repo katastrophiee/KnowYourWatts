@@ -4,6 +4,7 @@ using KnowYourWatts.ClientUI.DTO.Response;
 using KnowYourWatts.ClientUI.Interfaces;
 using Newtonsoft.Json;
 using System.Net.Sockets;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
 namespace KnowYourWatts.ClientUI;
@@ -70,7 +71,7 @@ public class ServerRequestHandler(
             await ClientSocket.Socket!.SendAsync(data);
 
             // Receives public key as a response
-            byte[] buffer = new byte[1024];
+            byte[] buffer = new byte[2048];
             var bytesReceived = await ClientSocket.Socket.ReceiveAsync(buffer);
 
             if (bytesReceived == 0)
@@ -89,17 +90,28 @@ public class ServerRequestHandler(
                 return string.Empty;
             }
 
-            // Deserialize the public key
-            var publicKey = JsonConvert.DeserializeObject<string>(response) ?? "";
+            // Deserialize the certificate
+            var certificateBase = JsonConvert.DeserializeObject<string>(response) ?? "";
 
             // If the deserialized response is null or whitespace, throw error as deserialization must have gone wrong
-            if (string.IsNullOrWhiteSpace(publicKey))
+            if (string.IsNullOrWhiteSpace(certificateBase))
             {
-                ErrorMessage.Invoke("No public key was received from the server.");
+                ErrorMessage.Invoke("No certificate was received from the server.");
                 return string.Empty;
             }
 
-            PublicKey = publicKey;
+            // Gets certificate data from the received certificate
+            var certificateData = Convert.FromBase64String(certificateBase);
+            var certificate = new X509Certificate2(certificateData);
+            // Checks certificate public key
+            using var rsa = certificate.GetRSAPublicKey();
+            if (rsa == null)
+            {
+                ErrorMessage.Invoke("Failed to extract public key from the certificate.");
+                return string.Empty;
+            }
+            // Extracts public key
+            PublicKey = Convert.ToBase64String(rsa.ExportRSAPublicKey());
 
             if (ClientSocket.Socket.Connected)
                 ClientSocket.Socket.Shutdown(SocketShutdown.Both);
@@ -145,6 +157,7 @@ public class ServerRequestHandler(
                 }
             }
 
+            // Error here
             if (string.IsNullOrEmpty(PublicKey))
             {
                 ErrorMessage.Invoke("Failed to retrieve public key.");
@@ -178,7 +191,7 @@ public class ServerRequestHandler(
     {
         try
         {
-            byte[] buffer = new byte[1024];
+            byte[] buffer = new byte[2048];
             var bytesReceived = await ClientSocket.Socket.ReceiveAsync(buffer);
 
             var receivedData = Encoding.ASCII.GetString(buffer, 0, bytesReceived);

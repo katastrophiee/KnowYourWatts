@@ -5,22 +5,28 @@ using System.Text;
 using KnowYourWatts.Server.DTO.Requests;
 using KnowYourWatts.Server.DTO.Enums;
 using KnowYourWatts.Server.DTO.Responses;
+using Org.BouncyCastle.Tls;
+using System.Security.Cryptography.X509Certificates;
 
 namespace KnowYourWatts.Server;
 
 public sealed class ConnectionHandler(
     ICalculationProvider calculationProvider,
-    IKeyHandler keyHandler) : IConnectionHandler
+    ICertificateHandler certificateHandler) : IConnectionHandler
 {
     //We use dependency injection to ensure we follow the SOLID principles
     private readonly ICalculationProvider _calculationProvider = calculationProvider;
-    private readonly IKeyHandler _keyHandler = keyHandler;
+    private readonly ICertificateHandler _certificateHandler = certificateHandler;
 
     public void HandleConnection(Socket handler)
     {
         try
         {
-            byte[] buffer = new byte[1024];
+            // Prepared generated certificate to be sent by converting to base64 format
+            var exportedCert = _certificateHandler.Certificate.Export(X509ContentType.Cert);
+            var base64Cert = Convert.ToBase64String(exportedCert);
+
+            byte[] buffer = new byte[2048];
 
             //Ensure we are connected to the client and can respond to them
             if (!handler.Connected || handler.RemoteEndPoint is null)
@@ -55,8 +61,8 @@ public sealed class ConnectionHandler(
 
             if (request.RequestType == RequestType.PublicKey)
             {
-                // Send the public key to the client
-                handler.Send(Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(_keyHandler.PublicKey)));
+                // Send the certificate to the client
+                handler.Send(Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(base64Cert)));
                 return;
             }
 
@@ -77,7 +83,7 @@ public sealed class ConnectionHandler(
                 return;
             }
 
-            var decryptedMpan = _keyHandler.DecryptClientMpan(request.EncryptedMpan);
+            var decryptedMpan = _certificateHandler.DecryptClientMpan(request.EncryptedMpan);
 
             // If decrypted MPAN does not match request MPAN, return error as may have wrong key.
             if (request.Mpan != decryptedMpan)
