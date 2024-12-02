@@ -13,18 +13,21 @@ public partial class MainPage : ContentPage
 
     readonly IRandomisedValueProvider _randomisedValueProvider;
     readonly IServerRequestHandler _serverRequestHandler;
+    readonly IEncryptionHelper _encryptionHelper;
 
     private TariffType TariffType;
     private decimal StandingCharge;
     private string Mpan;
+    private byte[] EncryptedMpan;
 
 
-    private Button _activeTab = null!; // Reference to the active tab
+    private Button _activeTab = null!;
 
-    public MainPage(IRandomisedValueProvider randomisedValueProvider, IServerRequestHandler serverRequestHandler)
+    public MainPage(IRandomisedValueProvider randomisedValueProvider, IServerRequestHandler serverRequestHandler, IEncryptionHelper encryptionHelper)
     {
         _randomisedValueProvider = randomisedValueProvider;
         _serverRequestHandler = serverRequestHandler;
+        _encryptionHelper = encryptionHelper;
 
         _serverRequestHandler.ErrorMessage += ShowError;
 
@@ -63,6 +66,7 @@ public partial class MainPage : ContentPage
     private void StartClock()
     {
         var clockTimer = new System.Timers.Timer(1000) { AutoReset = true };
+
         clockTimer.Elapsed += (sender, e) =>
         {
             MainThread.BeginInvokeOnMainThread(() =>
@@ -70,6 +74,7 @@ public partial class MainPage : ContentPage
                 UpdateTimeDisplay();
             });
         };
+
         clockTimer.Start();
     }
 
@@ -77,7 +82,7 @@ public partial class MainPage : ContentPage
     {
         var timer = new System.Timers.Timer
         {
-            Interval = _randomisedValueProvider.GenerateRandomTimeDelay(),
+            Interval = 1000,//_randomisedValueProvider.GenerateRandomTimeDelay(),
             AutoReset = true
         };
 
@@ -98,7 +103,7 @@ public partial class MainPage : ContentPage
         //run every hour
         var timer = new System.Timers.Timer
         {
-            Interval = (60*60*1000),
+            Interval = 1000,//(60*60*1000)*24,
             AutoReset = true
         };
 
@@ -124,7 +129,8 @@ public partial class MainPage : ContentPage
                 TariffType,
                 1,
                 StandingCharge,
-                Mpan
+                Mpan,
+                EncryptedMpan
             );
 
             if (response is null)
@@ -165,7 +171,8 @@ public partial class MainPage : ContentPage
                 TariffType,
                 1,
                 StandingCharge,
-                Mpan
+                Mpan,
+                EncryptedMpan
             );
 
             if (response is null)
@@ -207,7 +214,8 @@ public partial class MainPage : ContentPage
                 TariffType,
                 7,
                 StandingCharge,
-                Mpan
+                Mpan,
+                EncryptedMpan
             );
 
             if (response is null)
@@ -243,17 +251,17 @@ public partial class MainPage : ContentPage
         if (_activeTab == CurrentUsageTab)
         {
             UsageCost.Text = $"£{CurrentMeterReading.Cost}";
-            UsageKW.Text = $"{CurrentMeterReading.Usage}KW";
+            UsageKW.Text = $"{decimal.Round(CurrentMeterReading.Usage,2)}KW";
         }
         else if (_activeTab == TodayUsageTab)
         {
             UsageCost.Text = $"£{DailyMeterReading.Cost}";
-            UsageKW.Text = $"{DailyMeterReading.Usage}KW";
+            UsageKW.Text = $"{decimal.Round(DailyMeterReading.Usage,2)}KW";
         }
         else if (_activeTab == WeekUsageTab)
         {
             UsageCost.Text = $"£{WeeklyMeterReading.Cost}";
-            UsageKW.Text = $"{WeeklyMeterReading.Usage}KW";
+            UsageKW.Text = $"{decimal.Round(WeeklyMeterReading.Usage, 2)}KW";
         }
     }
     private void UpdateTimeDisplay()
@@ -264,9 +272,7 @@ public partial class MainPage : ContentPage
     private void OnTabClicked(object sender, EventArgs e)
     {
         if (sender is Button clickedButton)
-        {
             SelectTab(clickedButton, clickedButton.Text);
-        }
     }
 
     private void SelectTab(Button selectedButton, string tabName)
@@ -280,7 +286,8 @@ public partial class MainPage : ContentPage
 
         selectedButton.BackgroundColor = Color.FromArgb("#345365");
 
-        RefreshActiveTab(); // Update display for the selected tab
+        // Update display for the selected tab
+        RefreshActiveTab(); 
     }
 
     private void ShowError(string message)

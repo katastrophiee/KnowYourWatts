@@ -37,6 +37,7 @@ public static class MauiProgram
 
         builder.Services.AddScoped<IRandomisedValueProvider, RandomisedValueProvider>();
         builder.Services.AddSingleton<IServerRequestHandler, ServerRequestHandler>();
+        builder.Services.AddSingleton<IEncryptionHelper, EncryptionHelper>();
 
         try
         {

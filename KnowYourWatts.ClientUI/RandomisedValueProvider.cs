@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using KnowYourWatts.ClientUI.Interfaces;
+using System.Text;
 
 namespace KnowYourWatts.ClientUI;
 
@@ -15,7 +16,6 @@ class RandomisedValueProvider : IRandomisedValueProvider
             mpan.Append(random.Next(0, 9));
         }
         return mpan.ToString();
-       
     }
     public decimal GenerateRandomReading()
     {
