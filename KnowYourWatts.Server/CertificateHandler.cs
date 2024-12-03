@@ -1,4 +1,5 @@
 ﻿using KnowYourWatts.Server.Interfaces;
+using System.Net;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -68,10 +69,29 @@ public sealed class CertificateHandler : ICertificateHandler
     // inability to acquire a signed certificate, but an authentic signed certificate is important for real world application
     public X509Certificate2 GenerateSelfSignedCertificate()
     {
+        var host = Dns.GetHostEntry("localhost");
+        var ipAddress = host.AddressList[0];
+
         var subjectName = new X500DistinguishedName("CN=KnowYourWattsServer");
 
         using var rsa = RSA.Create(1024);
         var request = new CertificateRequest(subjectName, rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+
+        request.CertificateExtensions.Add(
+        new X509EnhancedKeyUsageExtension(
+        new OidCollection { new Oid("1.3.6.1.5.5.7.3.1") }, // Server Authentication OID
+        critical: true));
+
+        var sanBuilder = new SubjectAlternativeNameBuilder();
+        sanBuilder.AddDnsName("KnowYourWattsServer");
+        sanBuilder.AddIpAddress(ipAddress); // For localhost (127.0.0.1)
+        request.CertificateExtensions.Add(sanBuilder.Build());
+
+        request.CertificateExtensions.Add(
+        new X509BasicConstraintsExtension(false, false, 0, false));
+
+        request.CertificateExtensions.Add(
+        new X509KeyUsageExtension(X509KeyUsageFlags.DigitalSignature | X509KeyUsageFlags.KeyEncipherment, false));
 
         // Create a self-signed certificate
         var certificate = request.CreateSelfSigned(DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(5));

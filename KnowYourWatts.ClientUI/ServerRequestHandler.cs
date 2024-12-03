@@ -3,6 +3,7 @@ using KnowYourWatts.ClientUI.DTO.Requests;
 using KnowYourWatts.ClientUI.DTO.Response;
 using KnowYourWatts.ClientUI.Interfaces;
 using Newtonsoft.Json;
+using System.Net.Security;
 using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -57,6 +58,11 @@ public class ServerRequestHandler(
             // Wait for the socket to connect to the server
             await ClientSocket.ConnectClientToServer();
 
+            using var networkStream = new NetworkStream(ClientSocket.Socket, ownsSocket: false);
+            using var sslStream = new SslStream(networkStream, leaveInnerStreamOpen: false, (sender, certificate, chain, sslPolicyErrors) => true);
+
+            sslStream.AuthenticateAsClient("KnowYourWattsServer");
+
             // Creates a public key request
             var request = new ServerRequest
             {
@@ -67,12 +73,12 @@ public class ServerRequestHandler(
             };
 
             byte[] data = Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(request));
+            byte[] buffer = new byte[2048];
 
-            await ClientSocket.Socket!.SendAsync(data);
+            await sslStream.WriteAsync(data);
 
             // Receives public key as a response
-            byte[] buffer = new byte[2048];
-            var bytesReceived = await ClientSocket.Socket.ReceiveAsync(buffer);
+            var bytesReceived = await sslStream.ReadAsync(buffer);
 
             if (bytesReceived == 0)
             {
@@ -157,12 +163,16 @@ public class ServerRequestHandler(
                 }
             }
 
-            // Error here
             if (string.IsNullOrEmpty(PublicKey))
             {
                 ErrorMessage.Invoke("Failed to retrieve public key.");
                 return;
             }
+
+            using var networkStream = new NetworkStream(ClientSocket.Socket, ownsSocket: false);
+            using var sslStream = new SslStream(networkStream, leaveInnerStreamOpen: false, (sender, certificate, chain, sslPolicyErrors) => true);
+
+            sslStream.AuthenticateAsClient("KnowYourWattsServer");
 
             var encryptedMpan = _encryptionHelper.EncryptData(Encoding.ASCII.GetBytes(mpan), PublicKey);
 
@@ -179,7 +189,7 @@ public class ServerRequestHandler(
 
             byte[] data = Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(serverRequest));
 
-            await ClientSocket.Socket!.SendAsync(data);
+            await sslStream.WriteAsync(data);
         }
         catch (Exception ex)
         {
@@ -191,8 +201,14 @@ public class ServerRequestHandler(
     {
         try
         {
+
+            using var networkStream = new NetworkStream(ClientSocket.Socket, ownsSocket: false);
+            using var sslStream = new SslStream(networkStream, leaveInnerStreamOpen: false, (sender, certificate, chain, sslPolicyErrors) => true);
+
+            sslStream.AuthenticateAsClient("KnowYourWattsServer");
+
             byte[] buffer = new byte[2048];
-            var bytesReceived = await ClientSocket.Socket.ReceiveAsync(buffer);
+            var bytesReceived = await sslStream.ReadAsync(buffer);
 
             var receivedData = Encoding.ASCII.GetString(buffer, 0, bytesReceived);
 
