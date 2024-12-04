@@ -9,8 +9,5 @@ public interface IRandomisedValueProvider
     int GenerateRandomTimeDelay();
 
     int GenerateRandomTarrif();
-
-    int GenerateRandomBillingPeriod();
-
     decimal GenerateRandomStandingCharge();
 }

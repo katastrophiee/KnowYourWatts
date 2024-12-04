@@ -6,8 +6,6 @@ namespace KnowYourWatts.ClientUI;
 
 public static class MauiProgram
 {
-    private static ClientSocket ClientSocket;
-
     public static MauiApp CreateMauiApp()
     {
         var builder = MauiApp.CreateBuilder();
@@ -33,26 +31,9 @@ public static class MauiProgram
 
     private static void BuildClientDependencies(ref MauiAppBuilder builder)
     {
-        var host = Dns.GetHostEntry("localhost");
-        var ipAddress = host.AddressList[0];
-        var remoteEndPoint = new IPEndPoint(ipAddress, 11000);
-
         builder.Services.AddScoped<IRandomisedValueProvider, RandomisedValueProvider>();
-        builder.Services.AddSingleton<IServerRequestHandler, ServerRequestHandler>();
-        builder.Services.AddSingleton<IEncryptionHelper, EncryptionHelper>();
-
-        try
-        {
-            ClientSocket = new(
-                ipAddress,
-                remoteEndPoint
-            );
-
-            builder.Services.AddSingleton(ClientSocket);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"An error occured when starting the client: {ex}");
-        }
+        builder.Services.AddScoped<IServerRequestHandler, ServerRequestHandler>();
+        builder.Services.AddScoped<IEncryptionHelper, EncryptionHelper>();
+        builder.Services.AddScoped<ClientSocket>();
     }
 }
