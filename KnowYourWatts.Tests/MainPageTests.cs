@@ -10,26 +10,26 @@ namespace KnowYourWatts.Tests;
 [TestFixture]
 public class MainPageTests
 {
-    private IRandomisedValueProvider _mockValueProvider;
-    private IServerRequestHandler _mockServerRequestHandler;
-    private IMainThreadService _mockMainThreadService;
+    private IRandomisedValueProvider _randomiseValueProvider;
+    private IServerRequestHandler _serverRequestHandler;
+    private IMainThreadService _mainThreadService;
     private MainPage _mainPage;
 
     [SetUp]
     public void SetUp()
     {
-        _mockValueProvider = Substitute.For<IRandomisedValueProvider>();
-        _mockServerRequestHandler = Substitute.For<IServerRequestHandler>();
-        _mockMainThreadService = Substitute.For<IMainThreadService>();
-        _mockValueProvider.GenerateMpanForClient().Returns("1234567890123");
-        _mockValueProvider.GenerateRandomReading().Returns(1.5m);
-        _mockValueProvider.GenerateRandomStandingCharge().Returns(0.5m);
-        _mockValueProvider.GenerateRandomTarrif().Returns((int)TariffType.Fixed);
+        _randomiseValueProvider = Substitute.For<IRandomisedValueProvider>();
+        _serverRequestHandler = Substitute.For<IServerRequestHandler>();
+        _mainThreadService = Substitute.For<IMainThreadService>();
+        _randomiseValueProvider.GenerateMpanForClient().Returns("1234567890123");
+        _randomiseValueProvider.GenerateRandomReading().Returns(1.5m);
+        _randomiseValueProvider.GenerateRandomStandingCharge().Returns(0.5m);
+        _randomiseValueProvider.GenerateRandomTarrif().Returns((int)TariffType.Fixed);
 
         _mainPage = new MainPage(
-            _mockValueProvider,
-            _mockServerRequestHandler,
-            _mockMainThreadService
+            _randomiseValueProvider,
+            _serverRequestHandler,
+            _mainThreadService
         );
     }
 
@@ -46,10 +46,10 @@ public class MainPageTests
             Cost = 2.5m,
             ErrorMessage = ""
         };
-        _mockServerRequestHandler
+        _serverRequestHandler
             .SendRequestToServer(Arg.Any<decimal>(), Arg.Any<decimal>(), Arg.Any<RequestType>(), Arg.Any<TariffType>(), Arg.Any<int>(), Arg.Any<decimal>(), Arg.Any<string>())
             .Returns(mockResponse);
-        _mockMainThreadService.BeginInvokeOnMainThread(Arg.Any<Action>());
+        _mainThreadService.BeginInvokeOnMainThread(Arg.Any<Action>());
         // Act
         await _mainPage.SendCurrentReadingToServer();
 
@@ -72,7 +72,7 @@ public class MainPageTests
             ErrorMessage = errorMessage
         };
 
-        _mockServerRequestHandler
+        _serverRequestHandler
             .SendRequestToServer(Arg.Any<decimal>(), Arg.Any<decimal>(), Arg.Any<RequestType>(), Arg.Any<TariffType>(), Arg.Any<int>(), Arg.Any<decimal>(), Arg.Any<string>())
             .Returns(Task.FromResult(mockResponse));
 
@@ -80,7 +80,7 @@ public class MainPageTests
         await _mainPage.SendCurrentReadingToServer();
 
         // Assert
-        await _mockServerRequestHandler.Received(1).SendRequestToServer(
+        await _serverRequestHandler.Received(1).SendRequestToServer(
             Arg.Any<decimal>(),
             Arg.Any<decimal>(),
             Arg.Any<RequestType>(),
@@ -155,7 +155,7 @@ public class MainPageTests
             ErrorMessage = null
         };
 
-        _mockServerRequestHandler.SendRequestToServer(Arg.Any<decimal>(), Arg.Any<decimal>(), Arg.Any<RequestType>(),
+        _serverRequestHandler.SendRequestToServer(Arg.Any<decimal>(), Arg.Any<decimal>(), Arg.Any<RequestType>(),
                                                       Arg.Any<TariffType>(), Arg.Any<int>(), Arg.Any<decimal>(),
                                                       Arg.Any<string>())
                                  .Returns(mockResponse);
@@ -181,7 +181,7 @@ public class MainPageTests
             ErrorMessage = null
         };
 
-        _mockServerRequestHandler.SendRequestToServer(Arg.Any<decimal>(), Arg.Any<decimal>(), Arg.Any<RequestType>(),
+        _serverRequestHandler.SendRequestToServer(Arg.Any<decimal>(), Arg.Any<decimal>(), Arg.Any<RequestType>(),
                                                       Arg.Any<TariffType>(), Arg.Any<int>(), Arg.Any<decimal>(),
                                                       Arg.Any<string>())
                                  .Returns(mockResponse);
@@ -207,7 +207,7 @@ public class MainPageTests
             ErrorMessage = null
         };
 
-        _mockServerRequestHandler.SendRequestToServer(Arg.Any<decimal>(), Arg.Any<decimal>(), Arg.Any<RequestType>(),
+        _serverRequestHandler.SendRequestToServer(Arg.Any<decimal>(), Arg.Any<decimal>(), Arg.Any<RequestType>(),
                                                       Arg.Any<TariffType>(), Arg.Any<int>(), Arg.Any<decimal>(),
                                                       Arg.Any<string>())
                                  .Returns(mockResponse);
@@ -234,7 +234,7 @@ public class MainPageTests
             ErrorMessage = errorMessage
         };
 
-        _mockServerRequestHandler.SendRequestToServer(Arg.Any<decimal>(), Arg.Any<decimal>(), Arg.Any<RequestType>(),
+        _serverRequestHandler.SendRequestToServer(Arg.Any<decimal>(), Arg.Any<decimal>(), Arg.Any<RequestType>(),
                                                       Arg.Any<TariffType>(), Arg.Any<int>(), Arg.Any<decimal>(),
                                                       Arg.Any<string>())
                                  .Returns(mockResponse);
@@ -243,7 +243,7 @@ public class MainPageTests
         await _mainPage.SendCurrentReadingToServer();
 
         // Assert
-        _mockMainThreadService.Received().BeginInvokeOnMainThread(Arg.Any<Action>());
+        _mainThreadService.Received().BeginInvokeOnMainThread(Arg.Any<Action>());
         Assert.That(_mainPage.CurrentMeterReading.Cost, Is.EqualTo(0), "Current meter reading cost should remain unchanged.");
     }
 
@@ -262,7 +262,7 @@ public class MainPageTests
             ErrorMessage = errorMessage
         };
 
-        _mockServerRequestHandler.SendRequestToServer(Arg.Any<decimal>(), Arg.Any<decimal>(), Arg.Any<RequestType>(),
+        _serverRequestHandler.SendRequestToServer(Arg.Any<decimal>(), Arg.Any<decimal>(), Arg.Any<RequestType>(),
                                                       Arg.Any<TariffType>(), Arg.Any<int>(), Arg.Any<decimal>(),
                                                       Arg.Any<string>())
                                  .Returns(mockResponse);
@@ -271,7 +271,7 @@ public class MainPageTests
         await _mainPage.SendReadingToServerDaily();
 
         // Assert
-        _mockMainThreadService.Received().BeginInvokeOnMainThread(Arg.Any<Action>());
+        _mainThreadService.Received().BeginInvokeOnMainThread(Arg.Any<Action>());
         Assert.That(_mainPage.DailyMeterReading.Cost, Is.EqualTo(0), "Daily meter reading cost should remain unchanged.");
     }
 
@@ -290,7 +290,7 @@ public class MainPageTests
             ErrorMessage = errorMessage
         };
 
-        _mockServerRequestHandler.SendRequestToServer(Arg.Any<decimal>(), Arg.Any<decimal>(), Arg.Any<RequestType>(),
+        _serverRequestHandler.SendRequestToServer(Arg.Any<decimal>(), Arg.Any<decimal>(), Arg.Any<RequestType>(),
                                                       Arg.Any<TariffType>(), Arg.Any<int>(), Arg.Any<decimal>(),
                                                       Arg.Any<string>())
                                  .Returns(mockResponse);
@@ -299,7 +299,7 @@ public class MainPageTests
         await _mainPage.SendReadingToServerWeekly();
 
         // Assert
-        _mockMainThreadService.Received().BeginInvokeOnMainThread(Arg.Any<Action>());
+        _mainThreadService.Received().BeginInvokeOnMainThread(Arg.Any<Action>());
         Assert.That(_mainPage.WeeklyMeterReading.Cost, Is.EqualTo(0), "Weekly meter reading cost should remain unchanged.");
     }
 
