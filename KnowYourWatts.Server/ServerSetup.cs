@@ -25,9 +25,10 @@ public sealed class ServerSetup
 
         services.AddScoped<IConnectionHandler, ConnectionHandler>();
         services.AddScoped<ICalculationProvider, CalculationProvider>();
-        services.AddScoped<IPreviousReadingRepository, PreviousReadingRepository>();
-        services.AddScoped<ITariffRepository, TariffRepository>();
-        services.AddScoped<ICostRepository, CostRepository>();
+        services.AddTransient<IPreviousReadingRepository, PreviousReadingRepository>();
+        services.AddTransient<ITariffRepository, TariffRepository>();
+        services.AddTransient<ICostRepository, CostRepository>();
+        services.AddScoped<ICertificateHandler, CertificateHandler>();
 
         var serviceProvider = services.BuildServiceProvider();
 

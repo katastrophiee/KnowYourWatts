@@ -8,5 +8,7 @@ public sealed class PreviousReading
 
     public decimal PreviousUsage { get; set; }
 
+    public DateTime ResetDate { get; set; }
+
     public RequestType RequestType { get; set; }
 }

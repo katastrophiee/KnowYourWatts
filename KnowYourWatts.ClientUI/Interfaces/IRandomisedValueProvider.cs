@@ -1,4 +1,4 @@
-﻿namespace KnowYourWatts.ClientUI;
+﻿namespace KnowYourWatts.ClientUI.Interfaces;
 
 public interface IRandomisedValueProvider
 {
@@ -7,6 +7,7 @@ public interface IRandomisedValueProvider
     decimal GenerateRandomReading();
 
     int GenerateRandomTimeDelay();
+
     int GenerateRandomTarrif();
     decimal GenerateRandomStandingCharge();
 }

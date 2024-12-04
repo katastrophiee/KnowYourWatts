@@ -3,40 +3,40 @@ using System.Net.Sockets;
 
 namespace KnowYourWatts.ClientUI;
 
-public class ClientSocket(
-    IPAddress ipAddress,
-    IPEndPoint remoteEndPoint)
+public class ClientSocket
 {
-    public Socket Socket { get; set; }
-    public IPAddress IPAddress { get; set; } = ipAddress;
-    public IPEndPoint RemoteEndPoint { get; set; } = remoteEndPoint;
+    public Socket Socket { get; set; } = null!;
 
+    public string ErrorMessage { get; set; } = "";
 
     public async Task ConnectClientToServer()
     {
         try
         {
-            Socket = new Socket(IPAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            var ipAddress = Dns.GetHostEntry("localhost").AddressList[0];
+            var remoteEndPoint = new IPEndPoint(ipAddress, 11000);
+
+            Socket = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
             for (var retryCount = 0; retryCount < 5; retryCount++)
             {
                 if (!Socket.Connected)
                 {
                     // Connect to the endpoint on the server
-                    await Socket.ConnectAsync(RemoteEndPoint);
+                    await Socket.ConnectAsync(remoteEndPoint);
                 }
                 else
                 {
-                    Console.WriteLine("Successfully connected to the server.");
+                    ErrorMessage = "Successfully connected to the server.";
                     return;
                 }
             }
 
-            Console.WriteLine("The client could not connect to the server.");
+            ErrorMessage = "The client could not connect to the server.";
         }
         catch (Exception ex)
         {
-            Console.WriteLine("An error occured when starting the client: " + ex.ToString());
+            ErrorMessage = "An error occured when trying to connect to the server: " + ex.ToString();
         }
     }
 }

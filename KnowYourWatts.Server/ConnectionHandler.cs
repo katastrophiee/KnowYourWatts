@@ -5,27 +5,36 @@ using System.Text;
 using KnowYourWatts.Server.DTO.Requests;
 using KnowYourWatts.Server.DTO.Enums;
 using KnowYourWatts.Server.DTO.Responses;
+using System.Security.Cryptography.X509Certificates;
 
 namespace KnowYourWatts.Server;
 
-public sealed class ConnectionHandler(ICalculationProvider calculationProvider) : IConnectionHandler
+public sealed class ConnectionHandler(
+    ICalculationProvider calculationProvider,
+    ICertificateHandler certificateHandler) : IConnectionHandler
 {
     //We use dependency injection to ensure we follow the SOLID principles
     private readonly ICalculationProvider _calculationProvider = calculationProvider;
+    private readonly ICertificateHandler _certificateHandler = certificateHandler;
 
     public void HandleConnection(Socket handler)
     {
         try
         {
+            // Prepared generated certificate to be sent by converting to base64 format
+            var exportedCert = _certificateHandler.Certificate.Export(X509ContentType.Cert);
+            var base64Cert = Convert.ToBase64String(exportedCert);
+
+            byte[] buffer = new byte[2048];
+
             //Ensure we are connected to the client and can respond to them
             if (!handler.Connected || handler.RemoteEndPoint is null)
             {
                 //We log an error to the console here as we are unable to respond to the client
-                Console.WriteLine("No target address for a response was provided from the recieved request.");
+                Console.WriteLine("No target address for a response was provided from the received request.");
                 return;
             }
 
-            byte[] buffer = new byte[1024];
             int bytesReceived = handler.Receive(buffer);
 
             //Check we received some data from the client
@@ -40,7 +49,7 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider) 
             //Convert the data to a string so we can use it as JSON
             var receivedData = Encoding.ASCII.GetString(buffer, 0, bytesReceived);
 
-            //Convert the JSON to an object so we can use it for our request
+            //Convert the JSON to an object so we can use the request
             var request = JsonConvert.DeserializeObject<ServerRequest>(receivedData);
 
             if (request is null)
@@ -51,20 +60,51 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider) 
                 return;
             }
 
+            if (request.RequestType == RequestType.PublicKey)
+            {
+                // Send the certificate to the client
+                handler.Send(Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(base64Cert)));
+                return;
+            }
+
             if (string.IsNullOrEmpty(request.Mpan))
             {
                 Console.WriteLine("No MPAN was provided with the request.");
                 var response = Encoding.ASCII.GetBytes(SerializeErrorResponse("No MPAN was provided with the request."));
+                Console.WriteLine(response);
                 handler.Send(response);
                 return;
             }
-           
-            CalculationResponse calculationResponse;
-            var currentUsageRequest = JsonConvert.DeserializeObject<CurrentUsageRequest>(request.Data);
-            calculationResponse = CalculateUsage(request.Mpan, request.RequestType, currentUsageRequest);
 
+            if (request.EncryptedMpan.Length == 0)
+            {
+                Console.WriteLine("Error: MPAN length is invalid.");
+                var reponse = Encoding.ASCII.GetBytes(SerializeErrorResponse("MPAN length is invalid."));
+                handler.Send(reponse);
+                return;
+            }
 
-            if (!string.IsNullOrEmpty(calculationResponse.ErrorMessage))
+            var decryptedMpan = _certificateHandler.DecryptClientMpan(request.EncryptedMpan);
+
+            // If decrypted MPAN does not match request MPAN, return error as may have wrong key.
+            if (request.Mpan != decryptedMpan)
+            {
+                Console.WriteLine("Error: The decrypted MPAN does not match the request MPAN");
+                var resposnse = Encoding.ASCII.GetBytes(SerializeErrorResponse("The decrypted MPAN does not match the request MPAN"));
+                handler.Send(resposnse);
+                return;
+            }
+
+            //Based on our request type, we want to convert the string of JSON in the data property to the correct object
+            var calculationResponse = request.RequestType switch
+            {
+                RequestType.CurrentUsage => CalculateCurrentUsage(request.Mpan, JsonConvert.DeserializeObject<CurrentUsageRequest>(request.Data)),
+                RequestType.TodaysUsage => CalculateDailyUsage(request.Mpan, JsonConvert.DeserializeObject<DailyUsageRequest>(request.Data)),
+                RequestType.WeeklyUsage => CalculateWeeklyUsage(request.Mpan, JsonConvert.DeserializeObject<WeeklyUsageRequest>(request.Data)),
+                _ => new($"The request type {request.RequestType} was not recognized.")
+            };
+
+            if (calculationResponse is not null && !string.IsNullOrEmpty(calculationResponse.ErrorMessage))
                 Console.WriteLine(calculationResponse.ErrorMessage);
 
             //We put the response object into JSON and send it back to the client
@@ -73,7 +113,6 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider) 
         catch (SocketException ex)
         {
             Console.WriteLine("Socket error: " + ex.Message);
-            return;
         }
         catch (JsonReaderException ex)
         {
@@ -84,7 +123,7 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider) 
         catch (Exception ex)
         {
             Console.WriteLine($"Error handling connection: {ex}");
-            var response = Encoding.ASCII.GetBytes("An unknown error occured when handling the connection.");
+            var response = Encoding.ASCII.GetBytes("An unknown error occured when handling the request.");
             handler.Send(response);
         }
     }
@@ -120,4 +159,10 @@ public sealed class ConnectionHandler(ICalculationProvider calculationProvider) 
             return new($"An unknown error occurred when trying to calculate the cost: {ex.Message}");
         }
     }
+
+    private CalculationResponse CalculateCurrentUsage(string mpan, CurrentUsageRequest request) => CalculateUsage(mpan, RequestType.CurrentUsage, request);
+
+    private CalculationResponse CalculateDailyUsage(string mpan, DailyUsageRequest request) => CalculateUsage(mpan, RequestType.TodaysUsage, request);
+
+    private CalculationResponse CalculateWeeklyUsage(string mpan, WeeklyUsageRequest request) => CalculateUsage(mpan, RequestType.WeeklyUsage, request);
 }

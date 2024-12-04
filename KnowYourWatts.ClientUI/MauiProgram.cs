@@ -31,25 +31,9 @@ public static class MauiProgram
 
     private static void BuildClientDependencies(ref MauiAppBuilder builder)
     {
-        var host = Dns.GetHostEntry("localhost");
-        var ipAddress = host.AddressList[0];
-        var remoteEndPoint = new IPEndPoint(ipAddress, 11000);
-
         builder.Services.AddScoped<IRandomisedValueProvider, RandomisedValueProvider>();
-        builder.Services.AddSingleton<IServerRequestHandler, ServerRequestHandler>();
-
-        try
-        {
-            var clientSocket = new ClientSocket(
-                ipAddress,
-                remoteEndPoint
-            );
-
-            builder.Services.AddSingleton(clientSocket);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"An error occured when starting the client: {ex}");
-        }
+        builder.Services.AddScoped<IServerRequestHandler, ServerRequestHandler>();
+        builder.Services.AddScoped<IEncryptionHelper, EncryptionHelper>();
+        builder.Services.AddScoped<ClientSocket>();
     }
 }

@@ -3,26 +3,20 @@ using KnowYourWatts.ClientUI.DTO.Requests;
 using KnowYourWatts.ClientUI.DTO.Response;
 using KnowYourWatts.ClientUI.Interfaces;
 using Newtonsoft.Json;
-using System.Collections.Concurrent;
 using System.Net.Sockets;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
 namespace KnowYourWatts.ClientUI;
 
-public class ServerRequestHandler : IServerRequestHandler
-{
-    private readonly ClientSocket _clientSocket;
-    public event Action<string> ErrorMessage = null!;
+public class ServerRequestHandler(ClientSocket clientSocket, IEncryptionHelper encryptionHelper) : IServerRequestHandler
+{   
+    private readonly ClientSocket ClientSocket = clientSocket;
+    private readonly IEncryptionHelper _encryptionHelper = encryptionHelper;
 
-    private bool RunProcessQueue;
-    private readonly ConcurrentQueue<ServerRequest> _requestQueue = new ConcurrentQueue<ServerRequest>();
-    private readonly ConcurrentDictionary<ServerRequest, TaskCompletionSource<SmartMeterCalculationResponse?>> _pendingResponses = new();
-    private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+    private string PublicKey = "";
 
-    public ServerRequestHandler(ClientSocket clientSocket)
-    {
-        _clientSocket = clientSocket;
-    }
+    public event Action<string> ErrorMessage;
 
     // Entry point for the UI to send a request to the server
     public async Task<SmartMeterCalculationResponse?> SendRequestToServer(
@@ -34,40 +28,103 @@ public class ServerRequestHandler : IServerRequestHandler
         decimal standingCharge,
         string mpan)
     {
-        //Create the request for the data
-        var request = new CurrentUsageRequest(tariffType, initialReading, currentCost, billingPeriod, standingCharge);
-        var serverRequest = new ServerRequest
+        try
         {
-            Mpan = mpan,
-            RequestType = requestType,
-            Data = JsonConvert.SerializeObject(request)
-        };
+            //Add retry back in here
+            if (string.IsNullOrEmpty(PublicKey))
+                await GetPublicKey();
 
-        var tcs = new TaskCompletionSource<SmartMeterCalculationResponse>();
-        _pendingResponses[serverRequest] =  tcs;
+            //Change to multiple req types
+            var request = new CurrentUsageRequest(tariffType, initialReading, currentCost, billingPeriod, standingCharge);
 
-        //adds request in a queue and processes the requests concurrently.
-        _requestQueue.Enqueue(serverRequest);
-        await Task.Run(() => ProcessQueue(_cancellationTokenSource.Token));
+            var encryptedMpan = _encryptionHelper.EncryptData(Encoding.ASCII.GetBytes(mpan), PublicKey);
 
-        return await tcs.Task;
-    } 
-    private async Task<SmartMeterCalculationResponse?> HandleServerResponse()
+            // Create a new request.
+            var serverRequest = new ServerRequest
+            {
+                Mpan = mpan,
+                EncryptedMpan = encryptedMpan,
+                RequestType = requestType,
+                Data = JsonConvert.SerializeObject(request)
+            };
+
+            await SendRequest(mpan, requestType, request);
+
+            return await HandleServerResponse(request.CurrentReading);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage.Invoke(ex.Message);
+            return null;
+        }
+    }
+
+    private async Task SendRequest<T>(string mpan, RequestType requestType, T request) where T : IUsageRequest
     {
         try
         {
-            // Receive the response from the server
-            byte[] buffer = new byte[1024];
-            var bytesReceived = await _clientSocket.Socket.ReceiveAsync(buffer);
+            // Tries to get the public key 5 times and errors if we can't
+            for (var retryCount = 0; retryCount < 5; retryCount++)
+            {
+                if (string.IsNullOrEmpty(PublicKey))
+                {
+                    await GetPublicKey();
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            // Error here
+            if (string.IsNullOrEmpty(PublicKey))
+            {
+                ErrorMessage.Invoke("Failed to retrieve public key.");
+                return;
+            }
+
+            var encryptedMpan = _encryptionHelper.EncryptData(Encoding.ASCII.GetBytes(mpan), PublicKey);
+
+            await ClientSocket.ConnectClientToServer();
+
+            if (!string.IsNullOrEmpty(ClientSocket.ErrorMessage))
+            {
+                ErrorMessage.Invoke(ClientSocket.ErrorMessage);
+                return;
+            }
+
+            // Create a new request.
+            var serverRequest = new ServerRequest
+            {
+                Mpan = mpan,
+                EncryptedMpan = encryptedMpan,
+                RequestType = requestType,
+                Data = JsonConvert.SerializeObject(request)
+            };
+
+            byte[] data = Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(serverRequest));
+
+            await ClientSocket.Socket!.SendAsync(data);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage.Invoke(ex.Message);
+        }
+    }
+
+    private async Task<SmartMeterCalculationResponse?> HandleServerResponse(decimal currentCost)
+    {
+        try
+        {
+            byte[] buffer = new byte[2048];
+            var bytesReceived = await ClientSocket.Socket.ReceiveAsync(buffer);
 
             var receivedData = Encoding.ASCII.GetString(buffer, 0, bytesReceived);
 
             var response = JsonConvert.DeserializeObject<SmartMeterCalculationResponse>(receivedData);
 
-            // Close the connection
-            _clientSocket.Socket.Shutdown(SocketShutdown.Both);
+            ClientSocket.Socket.Shutdown(SocketShutdown.Both);
 
-            // Check the response is not null
             if (response is null)
             {
                 ErrorMessage.Invoke("No response was received from the server.");
@@ -82,52 +139,100 @@ public class ServerRequestHandler : IServerRequestHandler
             return null;
         }
     }
-    private async Task ProcessQueue(CancellationToken cancellationToken)
+
+    public async Task GetPublicKey()
     {
-
-        if (!RunProcessQueue)
+        try
         {
-            RunProcessQueue = true;
-            while (_requestQueue.TryDequeue(out var request))
+            // Wait for the socket to connect to the server
+            await ClientSocket.ConnectClientToServer();
+
+            if (!string.IsNullOrEmpty(ClientSocket.ErrorMessage))
             {
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    break;
-                }
-                if(_pendingResponses.TryRemove(request,out var tcs))
-                {
-                    try
-                    {
-                        // Connect to the server
-                        await _clientSocket.ConnectClientToServer();
-
-                        // Send our request to the server
-                        var data = Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(request));
-                        await _clientSocket.Socket.SendAsync(data);
-
-                        // Handle the response from the server
-                        var response = await HandleServerResponse();
-
-                        // Set the response to this task as the request has been completed
-                       tcs?.SetResult(response);
-                    }
-                    catch (Exception ex)
-                    {
-                        if (tcs != null)
-                        {
-                            tcs.SetException(ex);
-                        }
-                        ErrorMessage.Invoke(ex.Message);
-                    }
-                    finally
-                    {
-                        tcs = null;
-
-
-                    }
-                }      
+                ErrorMessage.Invoke(ClientSocket.ErrorMessage);
+                return;
             }
-            RunProcessQueue = false;
+
+            // Creates a public key request
+            var request = new ServerRequest
+            {
+                Mpan = "",
+                EncryptedMpan = [],
+                RequestType = RequestType.PublicKey,
+                Data = ""
+            };
+
+            byte[] data = Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(request));
+
+            await ClientSocket.Socket!.SendAsync(data);
+
+            // Receives public key as a response
+            byte[] buffer = new byte[2048];
+            var bytesReceived = await ClientSocket.Socket.ReceiveAsync(buffer);
+
+            if (bytesReceived == 0)
+            {
+                ErrorMessage.Invoke("No data received from the server");
+                return;
+            }
+
+            // Receive the response from the server
+            var response = Encoding.ASCII.GetString(buffer, 0, bytesReceived);
+
+            // Return the response is null or whitespace
+            if (string.IsNullOrWhiteSpace(response))
+            {
+                ErrorMessage.Invoke("Received an empty or invalid response from the server.");
+                return;
+            }
+
+            // Deserialize the certificate
+            var certificateBase = JsonConvert.DeserializeObject<string>(response) ?? "";
+
+            // If the deserialized response is null or whitespace, throw error as deserialization must have gone wrong
+            if (string.IsNullOrWhiteSpace(certificateBase))
+            {
+                ErrorMessage.Invoke("No certificate was received from the server.");
+                return;
+            }
+
+            // Gets certificate data from the received certificate
+            var certificateData = Convert.FromBase64String(certificateBase);
+            var certificate = new X509Certificate2(certificateData);
+
+            // Checks certificate public key
+            using var rsa = certificate.GetRSAPublicKey();
+            if (rsa == null)
+            {
+                ErrorMessage.Invoke("Failed to extract public key from the certificate.");
+                return;
+            }
+
+            // Extracts public key
+            PublicKey = Convert.ToBase64String(rsa.ExportRSAPublicKey());
+
+            if (ClientSocket.Socket.Connected)
+                ClientSocket.Socket.Shutdown(SocketShutdown.Both);
+
+            return;
+        }
+        // Catch SocketException if a socket error occurs in the try block
+        catch (SocketException ex)
+        {
+            ErrorMessage.Invoke("Socket error: " + ex.Message);
+            return;
+        }
+        // Catch JsonException if an issue occurs with serialization or deserialization of request or response
+        catch (JsonException ex)
+        {
+            ErrorMessage.Invoke("JSON error: " + ex.Message);
+            return;
+        }
+        // General exception handler block
+        catch (Exception ex)
+        {
+            ErrorMessage.Invoke($"Unexpected error: {ex.Message}");
+            return;
         }
     }
 }

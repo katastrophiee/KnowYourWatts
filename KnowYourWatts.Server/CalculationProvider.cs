@@ -21,25 +21,22 @@ public sealed class CalculationProvider(
         {
             var previousReading = _previousReadingRepository.GetPreviousReadingByMpanAndReqType(request.Mpan, request.RequestType);
 
-            if (previousReading is not null && request.CurrentReading < previousReading &&request.RequestType != RequestType.CurrentUsage )
+            if (previousReading is not null && request.CurrentReading < previousReading && request.RequestType is not RequestType.CurrentUsage)
                 return new("Current energy reading cannot be less than previous energy reading.");
 
             var tarrifPrice = _tariffRepository.GetTariffPriceByType(request.TariffType);
 
             if (tarrifPrice is null)
                 return new($"Tariff type '{request.TariffType}' does not exist.");
+
             var energyUsed = 0m;
+
             //We use the difference between the current and previous readings to get the energy used
-            if (request.RequestType == RequestType.CurrentUsage)
-            {
-                energyUsed = request.CurrentReading;
-            }
-            else
-            {
-                energyUsed = previousReading is not null
+
+            energyUsed = previousReading is not null && request.RequestType != RequestType.CurrentUsage
                ? request.CurrentReading - previousReading.Value
                : request.CurrentReading;
-            }
+
             //We then calculate the cost of the electricity used using the tariff type
             var costOfElectricity = energyUsed * tarrifPrice.PriceInPence;
 
@@ -69,10 +66,10 @@ public sealed class CalculationProvider(
 
                 //We pass the cost calculated here to the mock database to add it to the existing cost and save it
                 _costRepository.AddOrUpdateClientTotalCost(request.Mpan, newTotalCost, request.RequestType);
-               
-            }     
-            //We need to save the a new previous reading to the mock database for the next time we calculate the cost
-            _previousReadingRepository.AddOrUpdatePreviousReading(request.Mpan, request.CurrentReading, request.RequestType);
+
+                //We need to save the a new previous reading to the mock database for the next time we calculate the cost
+                _previousReadingRepository.AddOrUpdatePreviousReading(request.Mpan, request.CurrentReading, request.RequestType);
+            } 
             
             return new CalculationResponse(totalCost);
         }

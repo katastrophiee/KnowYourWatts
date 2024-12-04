@@ -67,7 +67,7 @@ internal sealed class CalculateCostTests
         decimal expectedCostResult)
     {
         //Arrange
-        _previousReadingRepository.GetPreviousReadingByMpanAndReqType(Arg.Any<string>(), requestType).Returns(previousReading);
+        _previousReadingRepository.GetPreviousReadingByMpanAndReqType(Arg.Any<string>(), Arg.Is<RequestType>(r => r != RequestType.CurrentUsage)).Returns(previousReading);
 
         _request.TariffType = TariffType.Fixed;
         _request.RequestType = requestType;
@@ -102,7 +102,7 @@ internal sealed class CalculateCostTests
         decimal expectedCostResult)
     {
         //Arrange
-        _previousReadingRepository.GetPreviousReadingByMpanAndReqType(Arg.Any<string>(), requestType).Returns(previousReading);
+        _previousReadingRepository.GetPreviousReadingByMpanAndReqType(Arg.Any<string>(), Arg.Is<RequestType>(r => r == requestType)).Returns(previousReading);
 
         _request.TariffType = TariffType.Flex;
         _request.RequestType = requestType;
@@ -117,7 +117,6 @@ internal sealed class CalculateCostTests
         Assert.That(string.IsNullOrEmpty(result.ErrorMessage), Is.True);
         Assert.That(result.Cost, Is.EqualTo(expectedCostResult));
     }
-
 
     /// <summary>
     /// Test to ensure that cost calculations are correct for green tariff types
@@ -138,7 +137,7 @@ internal sealed class CalculateCostTests
         decimal expectedCostResult)
     {
         //Arrange
-        _previousReadingRepository.GetPreviousReadingByMpanAndReqType(Arg.Any<string>(), requestType).Returns(previousReading);
+        _previousReadingRepository.GetPreviousReadingByMpanAndReqType(Arg.Any<string>(), Arg.Is<RequestType>(r => r == requestType)).Returns(previousReading);
 
         _request.TariffType = TariffType.Green;
         _request.RequestType = requestType;
@@ -153,7 +152,6 @@ internal sealed class CalculateCostTests
         Assert.That(string.IsNullOrEmpty(result.ErrorMessage), Is.True);
         Assert.That(result.Cost, Is.EqualTo(expectedCostResult));
     }
-
 
     /// <summary>
     /// Test to ensure that cost calculations are correct for off peak tariff types
@@ -174,7 +172,7 @@ internal sealed class CalculateCostTests
         decimal expectedCostResult)
     {
         //Arrange
-        _previousReadingRepository.GetPreviousReadingByMpanAndReqType(Arg.Any<string>(),requestType).Returns(previousReading);
+        _previousReadingRepository.GetPreviousReadingByMpanAndReqType(Arg.Any<string>(), Arg.Is<RequestType>(r => r == requestType)).Returns(previousReading);
 
         _request.TariffType = TariffType.OffPeak;
         _request.RequestType = requestType;
@@ -189,6 +187,7 @@ internal sealed class CalculateCostTests
         Assert.That(string.IsNullOrEmpty(result.ErrorMessage), Is.True);
         Assert.That(result.Cost, Is.EqualTo(expectedCostResult));
     }
+
     /// <summary>
     /// Test to ensure that cost calculations are correct for fixed tariff types
     /// This website is used to determine the expected results: https://www.electricitybillcalculator.com/
@@ -203,8 +202,6 @@ internal sealed class CalculateCostTests
         decimal expectedCostResult)
     {
         //Arrange
-      
-
         _request.TariffType = TariffType.Fixed;
         _request.CurrentReading = currentReading;
         _request.BillingPeriod = billingPeriod;
@@ -232,7 +229,6 @@ internal sealed class CalculateCostTests
         decimal expectedCostResult)
     {
         //Arrange
-
         _request.TariffType = TariffType.Flex;
         _request.CurrentReading = currentReading;
         _request.BillingPeriod = billingPeriod;
@@ -245,7 +241,6 @@ internal sealed class CalculateCostTests
         Assert.That(string.IsNullOrEmpty(result.ErrorMessage), Is.True);
         Assert.That(result.Cost, Is.EqualTo(expectedCostResult));
     }
-
 
     /// <summary>
     /// Test to ensure that cost calculations are correct for green tariff types
@@ -261,7 +256,6 @@ internal sealed class CalculateCostTests
         decimal expectedCostResult)
     {
         //Arrange
-
         _request.TariffType = TariffType.Green;
         _request.CurrentReading = currentReading;
         _request.BillingPeriod = billingPeriod;
@@ -274,7 +268,6 @@ internal sealed class CalculateCostTests
         Assert.That(string.IsNullOrEmpty(result.ErrorMessage), Is.True);
         Assert.That(result.Cost, Is.EqualTo(expectedCostResult));
     }
-
 
     /// <summary>
     /// Test to ensure that cost calculations are correct for off peak tariff types
@@ -290,7 +283,6 @@ internal sealed class CalculateCostTests
         decimal expectedCostResult)
     {
         //Arrange
-
         _request.TariffType = TariffType.OffPeak;
         _request.CurrentReading = currentReading;
         _request.BillingPeriod = billingPeriod;
@@ -307,11 +299,12 @@ internal sealed class CalculateCostTests
     /// <summary>
     /// Test to ensure that the current reading is saved to the mock db as the new previous reading once calculations are done
     /// </summary>
-    [Test]
-    public void PreviousReadingIsSaved()
+    [TestCase(RequestType.TodaysUsage)]
+    [TestCase(RequestType.WeeklyUsage)]
+    public void PreviousReadingIsSaved(RequestType requestType)
     {
         //Arrange
-        //NA - Handled in the setup
+        _request.RequestType = requestType;
 
         //Act
         _ = _calculationProvider.CalculateCost(_request);
@@ -324,13 +317,19 @@ internal sealed class CalculateCostTests
         );
     }
 
+    //NEED TO ADD TESTS TO CHECK CURRENT DOES NOT RUN THESE BITS OF CODE
+    //NEED TO REVERT TESTS BACK THAT ARE NOW THE WEEKLY AND DAILY ONES - ALL THAT WAS NEEDED WAS SOME SETUP
+
     /// <summary>
     /// Test to ensure that no error occurs when the previous reading is null 
     /// </summary>
-    [Test]
-    public void NoErrorWhenNullPreviousReading()
+    [TestCase(RequestType.TodaysUsage)]
+    [TestCase(RequestType.WeeklyUsage)]
+    public void NoErrorWhenNullPreviousReading(RequestType requestType)
     {
         //Arrange
+        _request.RequestType = requestType;
+
         _previousReadingRepository.GetPreviousReadingByMpanAndReqType(Arg.Any<string>(), Arg.Any<RequestType>()).Returns(null as decimal?);
 
         //Act

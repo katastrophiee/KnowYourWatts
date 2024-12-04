@@ -44,9 +44,9 @@
 
                 <!-- Tab headers -->
                 <Grid Grid.Row="0" ColumnDefinitions="*,*,*">
-                    <Button x:Name="CurrentUsageTab" Text="Current Usages" Style="{StaticResource TabButtonStyle}" Clicked="OnTabClicked" Grid.Column="0" />
-                    <Button x:Name="TodayUsageTab" Text="Today's Usage" Style="{StaticResource TabButtonStyle}" Clicked="OnTabClicked" Grid.Column="1" />
-                    <Button x:Name="WeekUsageTab" Text="Week Usage" Style="{StaticResource TabButtonStyle}" Clicked="OnTabClicked" Grid.Column="2" />
+                    <Button x:Name="CurrentUsageTab" Text="Current Usages" FontSize="20" Style="{StaticResource TabButtonStyle}" Clicked="OnTabClicked" Grid.Column="0" />
+                    <Button x:Name="TodayUsageTab" Text="Today's Usage"  FontSize="20" Style="{StaticResource TabButtonStyle}" Clicked="OnTabClicked" Grid.Column="1" />
+                    <Button x:Name="WeekUsageTab" Text="Week Usage"  FontSize="20" Style="{StaticResource TabButtonStyle}" Clicked="OnTabClicked" Grid.Column="2" />
                 </Grid>
 
                 <!-- Tab content -->
@@ -57,9 +57,9 @@
                     </Grid.ColumnDefinitions>
 
                     <StackLayout Grid.Column="0" Margin="10">
-                        <Label Text="Usage:" FontAttributes="Bold" Style="{StaticResource UsageTextStyle}" />
-                        <Label x:Name="UsageCost" Text="£0.00" Style="{StaticResource UsageTextStyle}" />
-                        <Label x:Name="UsageKW" Text="00.0KW" Style="{StaticResource UsageTextStyle}" />
+                        <Label Text="Usage:" FontAttributes="Bold" FontSize="18" Style="{StaticResource UsageTextStyle}" />
+                        <Label x:Name="UsageCost" Text="£0.00" FontSize="30"  Style="{StaticResource UsageTextStyle}" />
+                        <Label x:Name="UsageKW" Text="00.00KW" FontSize="30" Style="{StaticResource UsageTextStyle}" />
                     </StackLayout>
 
                     <Image Grid.Column="1" 
@@ -83,8 +83,8 @@
 
             <Frame CornerRadius="10" 
            BackgroundColor="#F0F0F0" 
-           WidthRequest="300" 
-           HeightRequest="200"
+           WidthRequest="400" 
+           HeightRequest="225"
            HorizontalOptions="Center" 
            VerticalOptions="Center"
            HasShadow="True">

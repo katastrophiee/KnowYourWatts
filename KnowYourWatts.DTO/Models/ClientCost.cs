@@ -8,5 +8,7 @@ public class ClientCost
 
     public decimal TotalCost { get; set; }
 
+    public DateTime ResetDate { get; set; }
+
     public RequestType RequestType { get; set; }
 }
