@@ -35,7 +35,7 @@ public sealed class ConnectionHandler(
             if (MonitorGrid()) 
             {
                 var response = Encoding.ASCII.GetBytes(SerializeErrorResponse("There is a problem with the Electricity grid"));
-                handler.Send(response);
+                sslStream.Write(response);
                 return;
             }
 
