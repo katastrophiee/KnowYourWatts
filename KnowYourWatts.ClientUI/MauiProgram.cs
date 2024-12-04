@@ -1,6 +1,5 @@
 ﻿using KnowYourWatts.ClientUI.Interfaces;
 using Microsoft.Extensions.Logging;
-using System.Net;
 
 namespace KnowYourWatts.ClientUI;
 

@@ -3,7 +3,6 @@ using KnowYourWatts.ClientUI.DTO.Requests;
 using KnowYourWatts.ClientUI.DTO.Response;
 using KnowYourWatts.ClientUI.Interfaces;
 using Newtonsoft.Json;
-using System.Net.Security;
 using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -11,7 +10,7 @@ using System.Text;
 namespace KnowYourWatts.ClientUI;
 
 public class ServerRequestHandler(ClientSocket clientSocket, IEncryptionHelper encryptionHelper) : IServerRequestHandler
-{   
+{
     private readonly ClientSocket ClientSocket = clientSocket;
     private readonly IEncryptionHelper _encryptionHelper = encryptionHelper;
 
@@ -31,7 +30,6 @@ public class ServerRequestHandler(ClientSocket clientSocket, IEncryptionHelper e
     {
         try
         {
-            //Add retry back in here
             if (string.IsNullOrEmpty(PublicKey))
                 await GetPublicKey();
 
@@ -77,7 +75,6 @@ public class ServerRequestHandler(ClientSocket clientSocket, IEncryptionHelper e
                 }
             }
 
-            // Error here
             if (string.IsNullOrEmpty(PublicKey))
             {
                 ErrorMessage.Invoke("Failed to retrieve public key.");
@@ -87,6 +84,8 @@ public class ServerRequestHandler(ClientSocket clientSocket, IEncryptionHelper e
             var encryptedMpan = _encryptionHelper.EncryptData(Encoding.ASCII.GetBytes(mpan), PublicKey);
 
             await ClientSocket.ConnectClientToServer();
+            // Authenticate the stream as a client.
+            ClientSocket.SslStream.AuthenticateAsClient("KnowYourWattsServer");
 
             if (!string.IsNullOrEmpty(ClientSocket.ErrorMessage))
             {
@@ -105,7 +104,8 @@ public class ServerRequestHandler(ClientSocket clientSocket, IEncryptionHelper e
 
             byte[] data = Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(serverRequest));
 
-            await ClientSocket.Socket!.SendAsync(data);
+            await ClientSocket.SslStream.WriteAsync(data);
+
         }
         catch (Exception ex)
         {
@@ -118,13 +118,14 @@ public class ServerRequestHandler(ClientSocket clientSocket, IEncryptionHelper e
         try
         {
             byte[] buffer = new byte[2048];
-            var bytesReceived = await ClientSocket.Socket.ReceiveAsync(buffer);
+
+            var bytesReceived = await ClientSocket.SslStream.ReadAsync(buffer);
 
             var receivedData = Encoding.ASCII.GetString(buffer, 0, bytesReceived);
 
             var response = JsonConvert.DeserializeObject<SmartMeterCalculationResponse>(receivedData);
-
-            ClientSocket.Socket.Shutdown(SocketShutdown.Both);
+            // Close the stream.
+            ClientSocket.SslStream.Close();
 
             if (response is null)
             {
@@ -148,10 +149,7 @@ public class ServerRequestHandler(ClientSocket clientSocket, IEncryptionHelper e
             // Wait for the socket to connect to the server
             await ClientSocket.ConnectClientToServer();
 
-            using var networkStream = new NetworkStream(ClientSocket.Socket, ownsSocket: false);
-            using var sslStream = new SslStream(networkStream, leaveInnerStreamOpen: false, (sender, certificate, chain, sslPolicyErrors) => true);
-
-            sslStream.AuthenticateAsClient("KnowYourWattsServer");
+            ClientSocket.SslStream.AuthenticateAsClient("KnowYourWattsServer");
 
             if (!string.IsNullOrEmpty(ClientSocket.ErrorMessage))
             {
@@ -171,10 +169,10 @@ public class ServerRequestHandler(ClientSocket clientSocket, IEncryptionHelper e
             byte[] data = Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(request));
             byte[] buffer = new byte[2048];
 
-            await sslStream.WriteAsync(data);
+            await ClientSocket.SslStream.WriteAsync(data);
 
-            // Receives public key as a response
-            var bytesReceived = await sslStream.ReadAsync(buffer);
+            // Receives certificate as a response
+            var bytesReceived = await ClientSocket.SslStream.ReadAsync(buffer);
 
             if (bytesReceived == 0)
             {
@@ -182,7 +180,7 @@ public class ServerRequestHandler(ClientSocket clientSocket, IEncryptionHelper e
                 return;
             }
 
-            // Receive the response from the server
+            // Get string from the bytes received
             var response = Encoding.ASCII.GetString(buffer, 0, bytesReceived);
 
             // Return the response is null or whitespace
@@ -217,8 +215,8 @@ public class ServerRequestHandler(ClientSocket clientSocket, IEncryptionHelper e
             // Extracts public key
             PublicKey = Convert.ToBase64String(rsa.ExportRSAPublicKey());
 
-            if (ClientSocket.Socket.Connected)
-                ClientSocket.Socket.Shutdown(SocketShutdown.Both);
+            if (ClientSocket.SslStream.CanRead && ClientSocket.SslStream.CanWrite)
+                ClientSocket.SslStream.Close();
 
             return;
         }
@@ -238,93 +236,7 @@ public class ServerRequestHandler(ClientSocket clientSocket, IEncryptionHelper e
         catch (Exception ex)
         {
             ErrorMessage.Invoke($"Unexpected error: {ex.Message}");
-            return string.Empty;
-        }
-    }
-
-
-    private async Task SendRequest<T>(string mpan, RequestType requestType, T request) where T : IUsageRequest
-    {
-        try
-        {
-            // Tries to get the public key 5 times and errors if we can't
-            for (var retryCount = 0; retryCount < 5;  retryCount++)
-            {
-                if (string.IsNullOrEmpty(PublicKey))
-                {
-                    await GetPublicKey(mpan);
-                }
-                else
-                {
-                    break;
-                }
-            }
-
-            if (string.IsNullOrEmpty(PublicKey))
-            {
-                ErrorMessage.Invoke("Failed to retrieve public key.");
-                return;
-            }
-
-            using var networkStream = new NetworkStream(ClientSocket.Socket, ownsSocket: false);
-            using var sslStream = new SslStream(networkStream, leaveInnerStreamOpen: false, (sender, certificate, chain, sslPolicyErrors) => true);
-
-            sslStream.AuthenticateAsClient("KnowYourWattsServer");
-
-            var encryptedMpan = _encryptionHelper.EncryptData(Encoding.ASCII.GetBytes(mpan), PublicKey);
-
-            await ClientSocket.ConnectClientToServer();
-
-            // Create a new request.
-            var serverRequest = new ServerRequest
-            {
-                Mpan = mpan,
-                EncryptedMpan = encryptedMpan,
-                RequestType = requestType,
-                Data = JsonConvert.SerializeObject(request)
-            };
-
-            byte[] data = Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(serverRequest));
-
-            await sslStream.WriteAsync(data);
-        }
-        catch (Exception ex)
-        {
-            ErrorMessage.Invoke(ex.Message);
-        }
-    }
-
-    private async Task<SmartMeterCalculationResponse?> HandleServerResponse(decimal currentCost)
-    {
-        try
-        {
-
-            using var networkStream = new NetworkStream(ClientSocket.Socket, ownsSocket: false);
-            using var sslStream = new SslStream(networkStream, leaveInnerStreamOpen: false, (sender, certificate, chain, sslPolicyErrors) => true);
-
-            sslStream.AuthenticateAsClient("KnowYourWattsServer");
-
-            byte[] buffer = new byte[2048];
-            var bytesReceived = await sslStream.ReadAsync(buffer);
-
-            var receivedData = Encoding.ASCII.GetString(buffer, 0, bytesReceived);
-
-            var response = JsonConvert.DeserializeObject<SmartMeterCalculationResponse>(receivedData);
-
-            ClientSocket.Socket.Shutdown(SocketShutdown.Both);
-
-            if (response is null)
-            {
-                ErrorMessage.Invoke("No response was received from the server.");
-                return null;
-            }
-
-            return response;
-        }
-        catch (Exception ex)
-        {
-            ErrorMessage.Invoke(ex.Message);
-            return null;
+            return;
         }
     }
 }

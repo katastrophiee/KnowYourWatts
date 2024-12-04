@@ -101,8 +101,8 @@ public sealed class ConnectionHandler(
             if (request.Mpan != decryptedMpan)
             {
                 Console.WriteLine("Error: The decrypted MPAN does not match the request MPAN");
-                var resposnse = Encoding.ASCII.GetBytes(SerializeErrorResponse("The decrypted MPAN does not match the request MPAN"));
-                sslStream.Write(resposnse);
+                var response = Encoding.ASCII.GetBytes(SerializeErrorResponse("The decrypted MPAN does not match the request MPAN"));
+                sslStream.Write(response);
                 return;
             }
 
