@@ -61,7 +61,8 @@ public partial class MainPage : ContentPage
         StartRandomReadingTimer();
 
         _resetDailyReadingsDate = DateTime.Now.Date.AddDays(1).AddTicks(-1);
-        _resetWeeklyReadingsDate = DateTime.Now.Date.AddDays((DayOfWeek.Monday - DateTime.Now.DayOfWeek + 7) % 7).AddTicks(-1);
+        _resetWeeklyReadingsDate = DateTime.Now.Date.AddDays((7 - (int)DateTime.Now.DayOfWeek) % 7).AddTicks(-1);
+
     }
 
     protected override async void OnAppearing()
@@ -112,6 +113,7 @@ public partial class MainPage : ContentPage
 
         timer.Start();
     }
+
     public async Task SendCurrentReadingToServer()
     {
         try
