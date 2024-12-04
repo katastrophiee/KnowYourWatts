@@ -6,9 +6,9 @@ namespace KnowYourWatts.ClientUI;
 
 public partial class MainPage : ContentPage
 {
-    private MeterReadings CurrentMeterReading = null!;
-    private MeterReadings DailyMeterReading = null!;
-    private MeterReadings WeeklyMeterReading = null!;
+    public MeterReadings CurrentMeterReading = null!;
+    public MeterReadings DailyMeterReading = null!;
+    public MeterReadings WeeklyMeterReading = null!;
 
     private DateTime _resetDailyReadingsDate;
     private DateTime _resetWeeklyReadingsDate;
@@ -22,10 +22,13 @@ public partial class MainPage : ContentPage
 
     private Button _activeTab = null!;
 
-    public MainPage(IRandomisedValueProvider randomisedValueProvider, IServerRequestHandler serverRequestHandler)
+    private readonly IMainThreadService _mainThreadService; 
+
+    public MainPage(IRandomisedValueProvider randomisedValueProvider, IServerRequestHandler serverRequestHandler, IMainThreadService mainThreadService)
     {
         _randomisedValueProvider = randomisedValueProvider;
         _serverRequestHandler = serverRequestHandler;
+         _mainThreadService = mainThreadService;
 
         _serverRequestHandler.ErrorMessage += ShowError;
 
@@ -58,7 +61,8 @@ public partial class MainPage : ContentPage
         StartRandomReadingTimer();
 
         _resetDailyReadingsDate = DateTime.Now.Date.AddDays(1).AddTicks(-1);
-        _resetWeeklyReadingsDate = DateTime.Now.Date.AddDays((DayOfWeek.Monday - DateTime.Now.DayOfWeek + 7) % 7).AddTicks(-1);
+        _resetWeeklyReadingsDate = DateTime.Now.Date.AddDays((7 - (int)DateTime.Now.DayOfWeek) % 7).AddTicks(-1);
+
     }
 
     protected override async void OnAppearing()
@@ -73,7 +77,7 @@ public partial class MainPage : ContentPage
 
         clockTimer.Elapsed += (sender, e) =>
         {
-            MainThread.BeginInvokeOnMainThread(() =>
+            _mainThreadService.BeginInvokeOnMainThread(() =>
             {
                 UpdateTimeDisplay();
             });
@@ -110,7 +114,7 @@ public partial class MainPage : ContentPage
         timer.Start();
     }
 
-    private async Task SendCurrentReadingToServer()
+    public async Task SendCurrentReadingToServer()
     {
         try
         {
@@ -149,7 +153,7 @@ public partial class MainPage : ContentPage
         }
     }
 
-    private async Task SendReadingToServerDaily()
+    public async Task SendReadingToServerDaily()
     {
         try
         {
@@ -188,7 +192,7 @@ public partial class MainPage : ContentPage
         }
     }
 
-    private async Task SendReadingToServerWeekly()
+    public async Task SendReadingToServerWeekly()
     {
         try
         {
@@ -296,7 +300,7 @@ public partial class MainPage : ContentPage
 
     private void ShowError(string message)
     {
-        MainThread.BeginInvokeOnMainThread(() =>
+        _mainThreadService.BeginInvokeOnMainThread(() =>
         {
             ErrorMessage.Text = message;
             ErrorOverlay.IsVisible = true;

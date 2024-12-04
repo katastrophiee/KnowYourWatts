@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\KnowYourWatts.ClientUI\KnowYourWatts.ClientUI.csproj" />
     <ProjectReference Include="..\KnowYourWatts.Server\KnowYourWatts.Server.csproj" />
   </ItemGroup>
 
