@@ -2,13 +2,15 @@
 
 namespace KnowYourWatts.ClientUI.DTO.Requests;
 
-public sealed class CurrentUsageRequest : IUsageRequest
+public sealed class CurrentUsageRequest(TariffType tariffType, decimal currentReading, decimal currentCost, int billingPeriod, decimal standingCharge) : IUsageRequest
 {
-    public TariffType TariffType { get; set; }
+    public TariffType TariffType { get; set; } = tariffType;
 
-    public decimal CurrentReading { get; set; }
+    public decimal CurrentReading { get; set; } = currentReading;
 
-    public int BillingPeriod { get; set; }
+    public decimal CurrentCost { get; set; } = currentCost;
 
-    public decimal StandingCharge { get; set; }
+    public int BillingPeriod { get; set; } = billingPeriod;
+
+    public decimal StandingCharge { get; set; } = standingCharge;
 }

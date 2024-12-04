@@ -1,29 +1,54 @@
 ﻿using KnowYourWatts.MockDb.Interfaces;
+using KnowYourWatts.Server.DTO.Enums;
 using KnowYourWatts.Server.DTO.Models;
+using System.Collections.Concurrent;
 
 namespace KnowYourWatts.MockDb.Repository;
 
 public class CostRepository : ICostRepository
 {
-    private List<ClientCost> ClientCosts { get; set; }
+    private ConcurrentDictionary<(string mpan, RequestType requestType), ClientCost> ClientCosts { get; set; }
+
 
     public CostRepository()
     {
-        ClientCosts = [];
+        ClientCosts = new();
     }
 
-    public void AddOrUpdateClientTotalCost(string mpan, decimal additionalCost)
+    public void AddOrUpdateClientTotalCost(string mpan, decimal newTotalCost, RequestType requestType)
     {
-        var existingTotalCost = ClientCosts.FirstOrDefault(r => r.Mpan == mpan);
+        var key = (mpan, requestType);
 
-        var newTotalCost = additionalCost;
+        var resetDate = requestType == RequestType.TodaysUsage
+            ? DateTime.Now.Date.AddDays(1).AddTicks(-1)
+            : DateTime.Now.Date.AddDays((DayOfWeek.Monday - DateTime.Now.DayOfWeek + 7) % 7).AddTicks(-1);
 
-        if (existingTotalCost is not null)
+        var newClientCost = new ClientCost 
+        { 
+            Mpan = mpan,
+            TotalCost = Math.Round(newTotalCost, 2, MidpointRounding.AwayFromZero),
+            ResetDate = resetDate,
+            RequestType = requestType 
+        };
+
+        ClientCosts.AddOrUpdate(key, newClientCost, (k, existingCost) => newClientCost);
+    }
+
+    public decimal? GetPreviousTotalCostByMpanAndReqType(string mpan, RequestType requestType)
+    {
+        var key = (mpan, requestType);
+
+        if (ClientCosts.TryGetValue(key, out var clientCost))
         {
-            newTotalCost += existingTotalCost.TotalCost;
-            ClientCosts.Remove(existingTotalCost);
+            if (DateTime.Now >= clientCost.ResetDate)
+            {
+                ClientCosts.Remove(key, out _);
+                return null;
+            }
+
+            return clientCost.TotalCost;
         }
 
-        ClientCosts.Add(new ClientCost { Mpan = mpan, TotalCost = newTotalCost });
+        return null;
     }
 }

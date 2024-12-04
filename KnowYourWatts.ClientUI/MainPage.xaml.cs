@@ -10,43 +10,41 @@ public partial class MainPage : ContentPage
     private MeterReadings DailyMeterReading = null!;
     private MeterReadings WeeklyMeterReading = null!;
 
+    private DateTime _resetDailyReadingsDate;
+    private DateTime _resetWeeklyReadingsDate;
+
     readonly IRandomisedValueProvider _randomisedValueProvider;
     readonly IServerRequestHandler _serverRequestHandler;
-    readonly IEncryptionHelper _encryptionHelper;
 
     private TariffType TariffType;
     private decimal StandingCharge;
     private string Mpan;
-    private byte[] EncryptedMpan;
-
-    private DateTime LastUpdatedDate = DateTime.Now.Date;
 
     private Button _activeTab = null!;
 
-    public MainPage(IRandomisedValueProvider randomisedValueProvider, IServerRequestHandler serverRequestHandler, IEncryptionHelper encryptionHelper)
+    public MainPage(IRandomisedValueProvider randomisedValueProvider, IServerRequestHandler serverRequestHandler)
     {
         _randomisedValueProvider = randomisedValueProvider;
         _serverRequestHandler = serverRequestHandler;
-        _encryptionHelper = encryptionHelper;
 
         _serverRequestHandler.ErrorMessage += ShowError;
 
         CurrentMeterReading = new()
         {
-            Cost = 0,
-            Usage = 0
+            Cost = 0m,
+            Usage = 0m
         };
 
         DailyMeterReading = new()
         {
-            Cost = 0,
-            Usage = 0
+            Cost = 0m,
+            Usage = 0m
         };
 
         WeeklyMeterReading = new()
         {
-            Cost = 0,
-            Usage = 0
+            Cost = 0m,
+            Usage = 0m
         };
 
         TariffType = (TariffType)Enum.ToObject(typeof(TariffType), _randomisedValueProvider.GenerateRandomTarrif());
@@ -56,8 +54,17 @@ public partial class MainPage : ContentPage
         InitializeComponent();
 
         SelectTab(CurrentUsageTab, "Current Usages");
-        StartClock(); // Start clock independently
-        StartRandomCurrentReadingTimer();
+        StartClock();
+        StartRandomReadingTimer();
+
+        _resetDailyReadingsDate = DateTime.Now.Date.AddDays(1).AddTicks(-1);
+        _resetWeeklyReadingsDate = DateTime.Now.Date.AddDays((DayOfWeek.Monday - DateTime.Now.DayOfWeek + 7) % 7).AddTicks(-1);
+    }
+
+    protected override async void OnAppearing()
+    {
+        base.OnAppearing();
+        //await _serverRequestHandler.GetPublicKey();
     }
 
     private void StartClock()
@@ -69,44 +76,52 @@ public partial class MainPage : ContentPage
             MainThread.BeginInvokeOnMainThread(() =>
             {
                 UpdateTimeDisplay();
-                CheckAndUpdateDailyUsage();
             });
         };
 
         clockTimer.Start();
     }
 
-    private void StartRandomCurrentReadingTimer()
+    private void StartRandomReadingTimer()
     {
         var timer = new System.Timers.Timer
         {
-            Interval = 1000,
-            AutoReset = true
+            Interval = 2000,//_randomisedValueProvider.GenerateRandomTimeDelay(),
+            AutoReset = false
         };
 
         timer.Elapsed += async (sender, e) =>
         {
-            await MainThread.InvokeOnMainThreadAsync(async () =>
-            {
-                await SendReadingToServer();
-            });
+            timer.Stop();
+
+            var randomReading = _randomisedValueProvider.GenerateRandomReading();
+
+            CurrentMeterReading.Usage = randomReading;
+            DailyMeterReading.Usage += randomReading;
+            WeeklyMeterReading.Usage += randomReading;
+
+            await SendCurrentReadingToServer();
+            await SendReadingToServerDaily();
+            await SendReadingToServerWeekly();
+
+            timer.Start();
         };
 
         timer.Start();
     }
 
-    private async Task SendReadingToServer()
+    private async Task SendCurrentReadingToServer()
     {
         try
         {
             var response = await _serverRequestHandler.SendRequestToServer(
                 CurrentMeterReading.Usage,
+                CurrentMeterReading.Cost,
                 RequestType.CurrentUsage,
                 TariffType,
-                1, // BillingPeriod
+                1,
                 StandingCharge,
-                Mpan,
-                EncryptedMpan
+                Mpan
             );
 
             if (response is null)
@@ -123,13 +138,88 @@ public partial class MainPage : ContentPage
 
             else if (response.Cost is not null)
             {
-                CurrentMeterReading.Cost += response.Cost.Value;
-
-                //move at some point
-                CurrentMeterReading.Usage += _randomisedValueProvider.GenerateRandomReading();
-
-                await MainThread.InvokeOnMainThreadAsync(RefreshActiveTab);
+                CurrentMeterReading.Cost = response.Cost.Value;
             }
+
+            await MainThread.InvokeOnMainThreadAsync(RefreshActiveTab);
+        }
+        catch (Exception ex)
+        {
+            ShowError(ex.Message);
+        }
+    }
+
+    private async Task SendReadingToServerDaily()
+    {
+        try
+        {
+            var response = await _serverRequestHandler.SendRequestToServer(
+                DailyMeterReading.Usage,
+                DailyMeterReading.Cost,
+                RequestType.TodaysUsage,
+                TariffType,
+                1,
+                StandingCharge,
+                Mpan
+            );
+
+            if (response is null)
+            {
+                ShowError("No response was received from the server.");
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(response.ErrorMessage))
+            {
+                ShowError(response.ErrorMessage);
+                return;
+            }
+
+            else if (response.Cost is not null)
+            {
+                DailyMeterReading.Cost += response.Cost.Value;
+            }
+
+            await MainThread.InvokeOnMainThreadAsync(RefreshActiveTab);
+        }
+        catch (Exception ex)
+        {
+            ShowError(ex.Message);
+        }
+    }
+
+    private async Task SendReadingToServerWeekly()
+    {
+        try
+        {
+            var response = await _serverRequestHandler.SendRequestToServer(
+                WeeklyMeterReading.Usage,
+                WeeklyMeterReading.Cost,
+                RequestType.WeeklyUsage,
+                TariffType,
+                7,
+                StandingCharge,
+                Mpan
+            );
+
+            if (response is null)
+            {
+                ShowError("No response was received from the server.");
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(response.ErrorMessage))
+            {
+                ShowError(response.ErrorMessage);
+                return;
+            }
+
+            else if (response.Cost is not null)
+            {
+                WeeklyMeterReading.Cost += response.Cost.Value;
+            }
+
+            await MainThread.InvokeOnMainThreadAsync(RefreshActiveTab);
         }
         catch (Exception ex)
         {
@@ -156,27 +246,31 @@ public partial class MainPage : ContentPage
         }
     }
 
-    private void CheckAndUpdateDailyUsage()
-    {
-        var currentDate = DateTime.Now.Date;
-
-        if (currentDate > LastUpdatedDate)
-        {
-            LastUpdatedDate = currentDate;
-
-            DailyMeterReading = new MeterReadings
-            {
-                Cost = 0,
-                Usage = _randomisedValueProvider.GenerateRandomReading()
-            };
-
-            MainThread.BeginInvokeOnMainThread(RefreshActiveTab);
-        }
-    }
-
     private void UpdateTimeDisplay()
     {
-        TimeDisplay.Text = DateTime.Now.ToString("HH:mm");
+        var currentTime = DateTime.Now;
+
+        TimeDisplay.Text = currentTime.ToString("HH:mm");
+
+        if (currentTime >= _resetDailyReadingsDate)
+        {
+            DailyMeterReading.Cost = 0;
+            DailyMeterReading.Usage = 0;
+
+            _resetDailyReadingsDate = DateTime.Now.Date.AddDays(1).AddTicks(-1);
+
+            RefreshActiveTab();
+        }
+
+        if (currentTime >= _resetWeeklyReadingsDate)
+        {
+            WeeklyMeterReading.Cost = 0;
+            WeeklyMeterReading.Usage = 0;
+
+            _resetWeeklyReadingsDate = DateTime.Now.Date.AddDays((DayOfWeek.Monday - DateTime.Now.DayOfWeek + 7) % 7).AddTicks(-1);
+
+            RefreshActiveTab();
+        }
     }
 
     private void OnTabClicked(object sender, EventArgs e)
@@ -202,8 +296,11 @@ public partial class MainPage : ContentPage
 
     private void ShowError(string message)
     {
-        ErrorMessage.Text = message;
-        ErrorOverlay.IsVisible = true;
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            ErrorMessage.Text = message;
+            ErrorOverlay.IsVisible = true;
+        });
     }
 
     private async void OnErrorDismissed(object sender, EventArgs e)

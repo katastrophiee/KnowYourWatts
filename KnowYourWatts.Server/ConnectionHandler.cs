@@ -51,6 +51,7 @@ public sealed class ConnectionHandler(
             //Check we received some data from the client
             if (bytesReceived == 0)
             {
+                Console.WriteLine("The request was received but it contained no data.");
                 var response = Encoding.ASCII.GetBytes(SerializeErrorResponse("The request was received but it contained no data."));
                 handler.Send(response);
                 return;
@@ -64,6 +65,7 @@ public sealed class ConnectionHandler(
 
             if (request is null)
             {
+                Console.WriteLine("The request did not contain any data when converted to an object.");
                 var response = Encoding.ASCII.GetBytes(SerializeErrorResponse("The request did not contain any data when converted to an object."));
                 sslStream.Write(response);
                 return;
@@ -78,7 +80,7 @@ public sealed class ConnectionHandler(
 
             if (string.IsNullOrEmpty(request.Mpan))
             {
-                Console.WriteLine("Error: No MPAN was provided with the request.");
+                Console.WriteLine("No MPAN was provided with the request.");
                 var response = Encoding.ASCII.GetBytes(SerializeErrorResponse("No MPAN was provided with the request."));
                 Console.WriteLine(response);
                 sslStream.Write(response);
@@ -113,6 +115,9 @@ public sealed class ConnectionHandler(
                 _ => new($"The request type {request.RequestType} was not recognized.")
             };
 
+            if (calculationResponse is not null && !string.IsNullOrEmpty(calculationResponse.ErrorMessage))
+                Console.WriteLine(calculationResponse.ErrorMessage);
+
             //We put the response object into JSON and send it back to the client
             sslStream.Write(Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(calculationResponse)));
         }
@@ -136,7 +141,7 @@ public sealed class ConnectionHandler(
 
     private static string SerializeErrorResponse(string errorMessage) => JsonConvert.SerializeObject(new CalculationResponse(errorMessage));
 
-    private CalculationResponse CalculateUsage<T>(string mpan, T? request) where T : IUsageRequest
+    private CalculationResponse CalculateUsage<T>(string mpan, RequestType requestType, T? request) where T : IUsageRequest
     {
         try
         {
@@ -149,8 +154,10 @@ public sealed class ConnectionHandler(
                 Mpan = mpan,
                 TariffType = request.TariffType,
                 CurrentReading = request.CurrentReading,
+                CurrentCost = request.CurrentCost,
                 BillingPeriod = request.BillingPeriod,
-                StandingCharge = request.StandingCharge
+                StandingCharge = request.StandingCharge,
+                RequestType = requestType
             };
 
             //Calculate the cost of the electricity used
@@ -164,9 +171,9 @@ public sealed class ConnectionHandler(
         }
     }
 
-    private CalculationResponse CalculateCurrentUsage(string mpan, CurrentUsageRequest? request) => CalculateUsage(mpan, request);
+    private CalculationResponse CalculateCurrentUsage(string mpan, CurrentUsageRequest request) => CalculateUsage(mpan, RequestType.CurrentUsage, request);
 
-    private CalculationResponse CalculateDailyUsage(string mpan, DailyUsageRequest? request) => CalculateUsage(mpan, request);
+    private CalculationResponse CalculateDailyUsage(string mpan, DailyUsageRequest request) => CalculateUsage(mpan, RequestType.TodaysUsage, request);
 
-    private CalculationResponse CalculateWeeklyUsage(string mpan, WeeklyUsageRequest? request) => CalculateUsage(mpan, request);
+    private CalculationResponse CalculateWeeklyUsage(string mpan, WeeklyUsageRequest request) => CalculateUsage(mpan, RequestType.WeeklyUsage, request);
 }

@@ -11,10 +11,8 @@ public sealed class CertificateHandler : ICertificateHandler
     public X509Certificate2 Certificate { get; set; }
     public CertificateHandler()
     {
-
         // Generate the certificate
         Certificate = GenerateSelfSignedCertificate();
-
     }
 
     // Public entry point

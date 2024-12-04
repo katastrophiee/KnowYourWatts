@@ -1,8 +1,10 @@
-﻿namespace KnowYourWatts.MockDb.Interfaces;
+﻿using KnowYourWatts.Server.DTO.Enums;
+
+namespace KnowYourWatts.MockDb.Interfaces;
 
 public interface IPreviousReadingRepository
 {
-    decimal? GetPreviousReadingByMpan(string mpan);
+    decimal? GetPreviousReadingByMpanAndReqType(string mpan, RequestType requestType);
 
-    void AddOrUpdatePreviousReading(string mpan, decimal currentUsage);
+    void AddOrUpdatePreviousReading(string mpan, decimal currentUsage, RequestType requestType);
 }
