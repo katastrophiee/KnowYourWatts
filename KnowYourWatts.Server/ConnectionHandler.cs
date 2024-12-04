@@ -15,7 +15,6 @@ public sealed class ConnectionHandler(
 {
     //We use dependency injection to ensure we follow the SOLID principles
     private readonly ICalculationProvider _calculationProvider = calculationProvider;
-    private static bool gridIssue = false;
     private readonly ICertificateHandler _certificateHandler = certificateHandler;
 
     public void HandleConnection(Socket handler)
@@ -172,7 +171,7 @@ public sealed class ConnectionHandler(
         Random rnd = new Random();
         while (true)
         {
-             gridIssue = rnd.Next(0, 10) < 0.5; // 30% chance of a grid issue
+             bool gridIssue = rnd.Next(0, 10) < 0.5; // 30% chance of a grid issue
             if (gridIssue)
             {
                 Console.WriteLine("Grid issue detected!");
