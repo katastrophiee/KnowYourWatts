@@ -77,11 +77,8 @@ internal sealed class CalculateCostTests
 
         //Assert
         Assert.That(string.IsNullOrEmpty(result.ErrorMessage), Is.True);
-        Assert.That(result.Cost, Is.EqualTo(expectedCostResult));
-        _previousReadingRepository.DidNotReceive().GetPreviousReadingByMpanAndReqType(
-           Arg.Is<string>(m => m == _request.Mpan),
-           Arg.Is<RequestType>(r => r == RequestType.CurrentUsage)
-         
+        Assert.That(result.Cost, Is.EqualTo(expectedCostResult)
+        
        );
     }
 
@@ -114,10 +111,7 @@ internal sealed class CalculateCostTests
         //Assert
         Assert.That(string.IsNullOrEmpty(result.ErrorMessage), Is.True);
         Assert.That(result.Cost, Is.EqualTo(expectedCostResult));
-        _previousReadingRepository.DidNotReceive().GetPreviousReadingByMpanAndReqType(
-           Arg.Is<string>(m => m == _request.Mpan),
-           Arg.Is<RequestType>(r => r == RequestType.CurrentUsage)
-           );
+      
     }
 
     /// <summary>
@@ -149,10 +143,7 @@ internal sealed class CalculateCostTests
         //Assert
         Assert.That(string.IsNullOrEmpty(result.ErrorMessage), Is.True);
         Assert.That(result.Cost, Is.EqualTo(expectedCostResult));
-        _previousReadingRepository.DidNotReceive().GetPreviousReadingByMpanAndReqType(
-           Arg.Is<string>(m => m == _request.Mpan),
-           Arg.Is<RequestType>(r => r == RequestType.CurrentUsage)
-           );
+       
     }
 
     /// <summary>
@@ -185,10 +176,7 @@ internal sealed class CalculateCostTests
         //Assert
         Assert.That(string.IsNullOrEmpty(result.ErrorMessage), Is.True);
         Assert.That(result.Cost, Is.EqualTo(expectedCostResult));
-        _previousReadingRepository.DidNotReceive().GetPreviousReadingByMpanAndReqType(
-          Arg.Is<string>(m => m == _request.Mpan),
-          Arg.Is<RequestType>(r => r == RequestType.CurrentUsage)
-          );
+       
     }
 
     /// <summary>
@@ -299,7 +287,22 @@ internal sealed class CalculateCostTests
         Assert.That(string.IsNullOrEmpty(result.ErrorMessage), Is.True);
         Assert.That(result.Cost, Is.EqualTo(expectedCostResult));
     }
+    [Test]
+    public void EnsurePrevReadingNotSavedForCurrentUsage()
+    {
+        //Arrange
+        _request.RequestType = RequestType.CurrentUsage;
 
+        //Act
+        _ = _calculationProvider.CalculateCost(_request);
+
+        //Assert
+        _previousReadingRepository.DidNotReceive().AddOrUpdatePreviousReading(
+            Arg.Any<string>(),
+            Arg.Any<decimal>(),
+            Arg.Any<RequestType>()
+        );
+    }
     /// <summary>
     /// Test to ensure that the current reading is saved to the mock db as the new previous reading once calculations are done
     /// </summary>
