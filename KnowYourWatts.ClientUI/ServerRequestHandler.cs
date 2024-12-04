@@ -38,6 +38,7 @@ public class ServerRequestHandler(ClientSocket clientSocket, IEncryptionHelper e
 
             var encryptedMpan = _encryptionHelper.EncryptData(Encoding.ASCII.GetBytes(mpan), PublicKey);
 
+
             // Create a new request.
             var serverRequest = new ServerRequest
             {

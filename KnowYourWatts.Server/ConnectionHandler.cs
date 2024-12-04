@@ -31,6 +31,13 @@ public sealed class ConnectionHandler(
                 clientCertificateRequired: false,
                 enabledSslProtocols: SslProtocols.Tls12,
                 checkCertificateRevocation: false);
+                
+            if (MonitorGrid()) 
+            {
+                var response = Encoding.ASCII.GetBytes(SerializeErrorResponse("There is a problem with the Electricity grid"));
+                handler.Send(response);
+                return;
+            }
 
             // Prepared generated certificate to be sent by converting to base64 format
             var exportedCert = _certificateHandler.Certificate.Export(X509ContentType.Cert);
@@ -168,6 +175,19 @@ public sealed class ConnectionHandler(
         catch (Exception ex)
         {
             return new($"An unknown error occurred when trying to calculate the cost: {ex.Message}");
+        }
+    }
+    private static bool MonitorGrid()
+    {
+        Random rnd = new Random();
+        while (true)
+        {
+             bool gridIssue = rnd.Next(0, 10) < 0.5; // 30% chance of a grid issue
+            if (gridIssue)
+            {
+                Console.WriteLine("Grid issue detected!");
+            }
+            return gridIssue;
         }
     }
 
