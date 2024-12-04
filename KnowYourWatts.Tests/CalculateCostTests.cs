@@ -61,6 +61,7 @@ internal sealed class CalculateCostTests
         decimal currentReading,
         int billingPeriod,
         decimal standingCharge,
+        RequestType requestType,
         decimal expectedCostResult)
     {
         //Arrange
@@ -86,6 +87,7 @@ internal sealed class CalculateCostTests
     /// Test to ensure that cost calculations are correct for flex tariff types
     /// This website is used to determine the expected results: https://www.electricitybillcalculator.com/
     /// </summary>
+
     [TestCase(10, 20, 1, 45, 3.22)]
     [TestCase(1, 2, 3, 0, 0.28)]
     [TestCase(78, 546, 7, 496, 165.20)]
@@ -118,6 +120,7 @@ internal sealed class CalculateCostTests
     /// Test to ensure that cost calculations are correct for green tariff types
     /// This website is used to determine the expected results: https://www.electricitybillcalculator.com/
     /// </summary>
+
     [TestCase(10, 20, 1, 45, 3.31)]
     [TestCase(1, 2, 3, 0,  0.28)]
     [TestCase(78, 546, 7, 496, 169.38)]
@@ -150,10 +153,10 @@ internal sealed class CalculateCostTests
     /// Test to ensure that cost calculations are correct for off peak tariff types
     /// This website is used to determine the expected results: https://www.electricitybillcalculator.com/
     /// </summary>
+
     [TestCase(10, 20, 1, 45, 2.95)]
     [TestCase(1, 2, 3, 0, 0.25)]
     [TestCase(78, 546, 7,  496,  152.62)]
-    
     public void EnsureOffPeakCalculationsAreCorrectDailyAndWeekly(
         decimal previousReading,
         decimal currentReading,
@@ -306,6 +309,7 @@ internal sealed class CalculateCostTests
     /// <summary>
     /// Test to ensure that the current reading is saved to the mock db as the new previous reading once calculations are done
     /// </summary>
+
     [TestCase(RequestType.TodaysUsage)]
     [TestCase(RequestType.WeeklyUsage)]
     public void PreviousReadingIsSaved(RequestType requestType)
@@ -323,6 +327,9 @@ internal sealed class CalculateCostTests
             Arg.Any<RequestType>()
         );
     }
+
+    //NEED TO ADD TESTS TO CHECK CURRENT DOES NOT RUN THESE BITS OF CODE
+    //NEED TO REVERT TESTS BACK THAT ARE NOW THE WEEKLY AND DAILY ONES - ALL THAT WAS NEEDED WAS SOME SETUP
 
     /// <summary>
     /// Test to ensure that no error occurs when the previous reading is null 

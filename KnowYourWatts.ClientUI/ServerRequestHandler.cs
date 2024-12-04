@@ -30,11 +30,16 @@ public class ServerRequestHandler(ClientSocket clientSocket, IEncryptionHelper e
     {
         try
         {
-          
+
+            //Add retry back in here
+            if (string.IsNullOrEmpty(PublicKey))
+                await GetPublicKey();
+
             //Change to multiple req types
             var request = new CurrentUsageRequest(tariffType, initialReading, currentCost, billingPeriod, standingCharge);
 
             var encryptedMpan = _encryptionHelper.EncryptData(Encoding.ASCII.GetBytes(mpan), PublicKey);
+
 
             // Create a new request.
             var serverRequest = new ServerRequest
