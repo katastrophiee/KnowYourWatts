@@ -34,6 +34,7 @@ public static class MauiProgram
         builder.Services.AddScoped<IRandomisedValueProvider, RandomisedValueProvider>();
         builder.Services.AddScoped<IServerRequestHandler, ServerRequestHandler>();
         builder.Services.AddScoped<IEncryptionHelper, EncryptionHelper>();
+        builder.Services.AddScoped<IMainThreadService, MainThreadService>();
         builder.Services.AddScoped<ClientSocket>();
     }
 }

@@ -12,11 +12,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KnowYourWatts.Server.DTO", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KnowYourWatts.Tests", "KnowYourWatts.Tests\KnowYourWatts.Tests.csproj", "{77B655DC-1D64-44DA-9CBC-5AFE5CF7358E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KnowYourWatts.MockDb", "KnowYourWatts.MockDb\KnowYourWatts.MockDb.csproj", "{762DD516-7308-4ACF-AF65-296F85F3DC91}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KnowYourWatts.MockDb", "KnowYourWatts.MockDb\KnowYourWatts.MockDb.csproj", "{762DD516-7308-4ACF-AF65-296F85F3DC91}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KnowYourWatts.ClientUI", "KnowYourWatts.ClientUI\KnowYourWatts.ClientUI.csproj", "{DEA657AF-7A78-40CD-A4CD-497D73FCEBB9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KnowYourWatts.ClientUI", "KnowYourWatts.ClientUI\KnowYourWatts.ClientUI.csproj", "{DEA657AF-7A78-40CD-A4CD-497D73FCEBB9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KnowYourWatts.ClientUI.DTO", "KnowYourWatts.ClientUI.DTO\KnowYourWatts.ClientUI.DTO.csproj", "{A1BBBB0D-9595-4D7D-B41E-922B0A34E01C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KnowYourWatts.ClientUI.DTO", "KnowYourWatts.ClientUI.DTO\KnowYourWatts.ClientUI.DTO.csproj", "{A1BBBB0D-9595-4D7D-B41E-922B0A34E01C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

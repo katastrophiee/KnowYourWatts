@@ -61,7 +61,6 @@ internal sealed class CalculateCostTests
         decimal currentReading,
         int billingPeriod,
         decimal standingCharge,
-        RequestType requestType,
         decimal expectedCostResult)
     {
         //Arrange
