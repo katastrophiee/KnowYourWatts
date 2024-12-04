@@ -6,6 +6,8 @@ using KnowYourWatts.Server.DTO.Requests;
 using KnowYourWatts.Server.DTO.Enums;
 using KnowYourWatts.Server.DTO.Responses;
 using System.Security.Cryptography.X509Certificates;
+using System.Net.Security;
+using System.Security.Authentication;
 
 namespace KnowYourWatts.Server;
 
@@ -21,10 +23,19 @@ public sealed class ConnectionHandler(
     {
         try
         {
+            using var networkStream = new NetworkStream(handler);
+            using var sslStream = new SslStream(networkStream, false, (sender, certificate, chain, sslPolicyErrors) => true);
+
+            sslStream.AuthenticateAsServer(
+                _certificateHandler.Certificate,
+                clientCertificateRequired: false,
+                enabledSslProtocols: SslProtocols.Tls12,
+                checkCertificateRevocation: false);
+                
             if (MonitorGrid()) 
             {
                 var response = Encoding.ASCII.GetBytes(SerializeErrorResponse("There is a problem with the Electricity grid"));
-                handler.Send(response);
+                sslStream.Write(response);
                 return;
             }
 
@@ -42,7 +53,7 @@ public sealed class ConnectionHandler(
                 return;
             }
 
-            int bytesReceived = handler.Receive(buffer);
+            int bytesReceived = sslStream.Read(buffer);
 
             //Check we received some data from the client
             if (bytesReceived == 0)
@@ -63,14 +74,14 @@ public sealed class ConnectionHandler(
             {
                 Console.WriteLine("The request did not contain any data when converted to an object.");
                 var response = Encoding.ASCII.GetBytes(SerializeErrorResponse("The request did not contain any data when converted to an object."));
-                handler.Send(response);
+                sslStream.Write(response);
                 return;
             }
 
             if (request.RequestType == RequestType.PublicKey)
             {
                 // Send the certificate to the client
-                handler.Send(Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(base64Cert)));
+                sslStream.Write(Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(base64Cert)));
                 return;
             }
 
@@ -79,7 +90,7 @@ public sealed class ConnectionHandler(
                 Console.WriteLine("No MPAN was provided with the request.");
                 var response = Encoding.ASCII.GetBytes(SerializeErrorResponse("No MPAN was provided with the request."));
                 Console.WriteLine(response);
-                handler.Send(response);
+                sslStream.Write(response);
                 return;
             }
 
@@ -87,7 +98,7 @@ public sealed class ConnectionHandler(
             {
                 Console.WriteLine("Error: MPAN length is invalid.");
                 var reponse = Encoding.ASCII.GetBytes(SerializeErrorResponse("MPAN length is invalid."));
-                handler.Send(reponse);
+                sslStream.Write(reponse);
                 return;
             }
 
@@ -97,8 +108,8 @@ public sealed class ConnectionHandler(
             if (request.Mpan != decryptedMpan)
             {
                 Console.WriteLine("Error: The decrypted MPAN does not match the request MPAN");
-                var resposnse = Encoding.ASCII.GetBytes(SerializeErrorResponse("The decrypted MPAN does not match the request MPAN"));
-                handler.Send(resposnse);
+                var response = Encoding.ASCII.GetBytes(SerializeErrorResponse("The decrypted MPAN does not match the request MPAN"));
+                sslStream.Write(response);
                 return;
             }
 
@@ -115,7 +126,7 @@ public sealed class ConnectionHandler(
                 Console.WriteLine(calculationResponse.ErrorMessage);
 
             //We put the response object into JSON and send it back to the client
-            handler.Send(Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(calculationResponse)));
+            sslStream.Write(Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(calculationResponse)));
         }
         catch (SocketException ex)
         {

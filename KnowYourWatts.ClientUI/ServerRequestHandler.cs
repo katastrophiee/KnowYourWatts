@@ -10,7 +10,7 @@ using System.Text;
 namespace KnowYourWatts.ClientUI;
 
 public class ServerRequestHandler(ClientSocket clientSocket, IEncryptionHelper encryptionHelper) : IServerRequestHandler
-{   
+{
     private readonly ClientSocket ClientSocket = clientSocket;
     private readonly IEncryptionHelper _encryptionHelper = encryptionHelper;
 
@@ -30,8 +30,6 @@ public class ServerRequestHandler(ClientSocket clientSocket, IEncryptionHelper e
     {
         try
         {
-
-            //Add retry back in here
             if (string.IsNullOrEmpty(PublicKey))
                 await GetPublicKey();
 
@@ -78,7 +76,6 @@ public class ServerRequestHandler(ClientSocket clientSocket, IEncryptionHelper e
                 }
             }
 
-            // Error here
             if (string.IsNullOrEmpty(PublicKey))
             {
                 ErrorMessage.Invoke("Failed to retrieve public key.");
@@ -88,6 +85,8 @@ public class ServerRequestHandler(ClientSocket clientSocket, IEncryptionHelper e
             var encryptedMpan = _encryptionHelper.EncryptData(Encoding.ASCII.GetBytes(mpan), PublicKey);
 
             await ClientSocket.ConnectClientToServer();
+            // Authenticate the stream as a client.
+            ClientSocket.SslStream.AuthenticateAsClient("KnowYourWattsServer");
 
             if (!string.IsNullOrEmpty(ClientSocket.ErrorMessage))
             {
@@ -106,7 +105,7 @@ public class ServerRequestHandler(ClientSocket clientSocket, IEncryptionHelper e
 
             byte[] data = Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(serverRequest));
 
-            await ClientSocket.Socket!.SendAsync(data);
+            await ClientSocket.SslStream.WriteAsync(data);
         }
         catch (Exception ex)
         {
@@ -119,13 +118,14 @@ public class ServerRequestHandler(ClientSocket clientSocket, IEncryptionHelper e
         try
         {
             byte[] buffer = new byte[2048];
-            var bytesReceived = await ClientSocket.Socket.ReceiveAsync(buffer);
+
+            var bytesReceived = await ClientSocket.SslStream.ReadAsync(buffer);
 
             var receivedData = Encoding.ASCII.GetString(buffer, 0, bytesReceived);
 
             var response = JsonConvert.DeserializeObject<SmartMeterCalculationResponse>(receivedData);
-
-            ClientSocket.Socket.Shutdown(SocketShutdown.Both);
+            // Close the stream.
+            ClientSocket.SslStream.Close();
 
             if (response is null)
             {
@@ -149,6 +149,8 @@ public class ServerRequestHandler(ClientSocket clientSocket, IEncryptionHelper e
             // Wait for the socket to connect to the server
             await ClientSocket.ConnectClientToServer();
 
+            ClientSocket.SslStream.AuthenticateAsClient("KnowYourWattsServer");
+
             if (!string.IsNullOrEmpty(ClientSocket.ErrorMessage))
             {
                 ErrorMessage.Invoke(ClientSocket.ErrorMessage);
@@ -165,12 +167,12 @@ public class ServerRequestHandler(ClientSocket clientSocket, IEncryptionHelper e
             };
 
             byte[] data = Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(request));
-
-            await ClientSocket.Socket!.SendAsync(data);
-
-            // Receives public key as a response
             byte[] buffer = new byte[2048];
-            var bytesReceived = await ClientSocket.Socket.ReceiveAsync(buffer);
+
+            await ClientSocket.SslStream.WriteAsync(data);
+
+            // Receives certificate as a response
+            var bytesReceived = await ClientSocket.SslStream.ReadAsync(buffer);
 
             if (bytesReceived == 0)
             {
@@ -178,7 +180,7 @@ public class ServerRequestHandler(ClientSocket clientSocket, IEncryptionHelper e
                 return;
             }
 
-            // Receive the response from the server
+            // Get string from the bytes received
             var response = Encoding.ASCII.GetString(buffer, 0, bytesReceived);
 
             // Return the response is null or whitespace
@@ -213,8 +215,8 @@ public class ServerRequestHandler(ClientSocket clientSocket, IEncryptionHelper e
             // Extracts public key
             PublicKey = Convert.ToBase64String(rsa.ExportRSAPublicKey());
 
-            if (ClientSocket.Socket.Connected)
-                ClientSocket.Socket.Shutdown(SocketShutdown.Both);
+            if (ClientSocket.SslStream.CanRead && ClientSocket.SslStream.CanWrite)
+                ClientSocket.SslStream.Close();
 
             return;
         }
