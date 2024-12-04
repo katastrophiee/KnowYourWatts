@@ -27,7 +27,7 @@ public class ClientSocket
                 }
                 else
                 {
-                    ErrorMessage = "Successfully connected to the server.";
+                    Console.WriteLine("Successfully connected to the server.");
                     return;
                 }
             }

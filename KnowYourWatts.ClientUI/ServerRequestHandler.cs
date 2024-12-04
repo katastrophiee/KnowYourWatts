@@ -30,10 +30,7 @@ public class ServerRequestHandler(ClientSocket clientSocket, IEncryptionHelper e
     {
         try
         {
-            //Add retry back in here
-            if (string.IsNullOrEmpty(PublicKey))
-                await GetPublicKey();
-
+          
             //Change to multiple req types
             var request = new CurrentUsageRequest(tariffType, initialReading, currentCost, billingPeriod, standingCharge);
 

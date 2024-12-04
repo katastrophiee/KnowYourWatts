@@ -15,12 +15,20 @@ public sealed class ConnectionHandler(
 {
     //We use dependency injection to ensure we follow the SOLID principles
     private readonly ICalculationProvider _calculationProvider = calculationProvider;
+    private static bool gridIssue = false;
     private readonly ICertificateHandler _certificateHandler = certificateHandler;
 
     public void HandleConnection(Socket handler)
     {
         try
         {
+            if (MonitorGrid()) 
+            {
+                var response = Encoding.ASCII.GetBytes(SerializeErrorResponse("There is a problem with the Electricity grid"));
+                handler.Send(response);
+                return;
+            }
+
             // Prepared generated certificate to be sent by converting to base64 format
             var exportedCert = _certificateHandler.Certificate.Export(X509ContentType.Cert);
             var base64Cert = Convert.ToBase64String(exportedCert);
@@ -157,6 +165,19 @@ public sealed class ConnectionHandler(
         catch (Exception ex)
         {
             return new($"An unknown error occurred when trying to calculate the cost: {ex.Message}");
+        }
+    }
+    private static bool MonitorGrid()
+    {
+        Random rnd = new Random();
+        while (true)
+        {
+             gridIssue = rnd.Next(0, 10) < 0.5; // 30% chance of a grid issue
+            if (gridIssue)
+            {
+                Console.WriteLine("Grid issue detected!");
+            }
+            return gridIssue;
         }
     }
 
