@@ -67,8 +67,7 @@ public sealed class CertificateHandler : ICertificateHandler
     // inability to acquire a signed certificate, but an authentic signed certificate is important for real world application
     public X509Certificate2 GenerateSelfSignedCertificate()
     {
-        var host = Dns.GetHostEntry("localhost");
-        var ipAddress = host.AddressList[0];
+        var ipAddress = Dns.GetHostEntry("localhost").AddressList[0];
 
         var subjectName = new X500DistinguishedName("CN=KnowYourWattsServer");
 

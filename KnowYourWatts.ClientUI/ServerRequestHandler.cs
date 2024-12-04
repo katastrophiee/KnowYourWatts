@@ -105,7 +105,6 @@ public class ServerRequestHandler(ClientSocket clientSocket, IEncryptionHelper e
             byte[] data = Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(serverRequest));
 
             await ClientSocket.SslStream.WriteAsync(data);
-
         }
         catch (Exception ex)
         {

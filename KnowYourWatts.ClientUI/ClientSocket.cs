@@ -16,18 +16,18 @@ public class ClientSocket
             var ipAddress = Dns.GetHostEntry("localhost").AddressList[0];
             var remoteEndPoint = new IPEndPoint(ipAddress, 11000);
 
-            var Socket = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            var socket = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
             for (var retryCount = 0; retryCount < 5; retryCount++)
             {
-                if (!Socket.Connected)
+                if (!socket.Connected)
                 {
                     // Connect to the endpoint on the server
-                    await Socket.ConnectAsync(remoteEndPoint);
+                    await socket.ConnectAsync(remoteEndPoint);
                 }
                 else
                 {
-                    var networkStream = new NetworkStream(Socket, ownsSocket: true);
+                    var networkStream = new NetworkStream(socket, ownsSocket: true);
                     SslStream = new SslStream(networkStream, leaveInnerStreamOpen: false, (sender, certificate, chain, sslPolicyErrors) => true);
                     Console.WriteLine("Successfully connected to the server.");
                     return;
