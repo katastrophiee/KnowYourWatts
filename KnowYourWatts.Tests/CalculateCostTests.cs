@@ -5,6 +5,7 @@ using KnowYourWatts.Server.DTO.Enums;
 using KnowYourWatts.Server.DTO.Models;
 using KnowYourWatts.Server.DTO.Requests;
 using NSubstitute;
+using NUnit.Framework.Constraints;
 
 namespace KnowYourWatts.Tests;
 
@@ -52,12 +53,9 @@ internal sealed class CalculateCostTests
     /// Test to ensure that cost calculations are correct for fixed tariff types
     /// This website is used to determine the expected results: https://www.electricitybillcalculator.com/
     /// </summary>
-    [TestCase(10, 20, 1, 45, RequestType.TodaysUsage, 3.05)]
-    [TestCase(1, 2, 3, 0, RequestType.TodaysUsage, 0.26)]
-    [TestCase(78, 546, 7, 496, RequestType.TodaysUsage, 156.85)]
-    [TestCase(10, 20, 1, 45, RequestType.WeeklyUsage, 3.05)]
-    [TestCase(1, 2, 3, 0, RequestType.WeeklyUsage, 0.26)]
-    [TestCase(78, 546, 7, 496, RequestType.WeeklyUsage, 156.85)]
+    [TestCase(10, 20, 1, 45, 3.05)]
+    [TestCase(1, 2, 3, 0,  0.26)]
+    [TestCase(78, 546, 7, 496,  156.85)]
     public void EnsureFixedCalculationsAreCorrectDailyAndWeekly(
         decimal previousReading,
         decimal currentReading,
@@ -70,45 +68,44 @@ internal sealed class CalculateCostTests
         _previousReadingRepository.GetPreviousReadingByMpanAndReqType(Arg.Any<string>(), Arg.Is<RequestType>(r => r != RequestType.CurrentUsage)).Returns(previousReading);
 
         _request.TariffType = TariffType.Fixed;
-        _request.RequestType = requestType;
         _request.CurrentReading = currentReading;
         _request.BillingPeriod = billingPeriod;
         _request.StandingCharge = standingCharge;
+        _request.RequestType = RequestType.TodaysUsage;
 
         //Act
         var result = _calculationProvider.CalculateCost(_request);
 
         //Assert
         Assert.That(string.IsNullOrEmpty(result.ErrorMessage), Is.True);
-        Assert.That(result.Cost, Is.EqualTo(expectedCostResult));
+        Assert.That(result.Cost, Is.EqualTo(expectedCostResult)
+        
+       );
     }
 
     /// <summary>
     /// Test to ensure that cost calculations are correct for flex tariff types
     /// This website is used to determine the expected results: https://www.electricitybillcalculator.com/
     /// </summary>
-    [TestCase(10, 20, 1, 45,RequestType.TodaysUsage, 3.22)]
-    [TestCase(1, 2, 3, 0, RequestType.TodaysUsage, 0.28)]
-    [TestCase(78, 546, 7, 496, RequestType.TodaysUsage,165.20)]
-    [TestCase(10, 20, 1, 45, RequestType.WeeklyUsage, 3.22)]
-    [TestCase(1, 2, 3, 0, RequestType.WeeklyUsage, 0.28)]
-    [TestCase(78, 546, 7, 496, RequestType.WeeklyUsage, 165.20)]
+
+    [TestCase(10, 20, 1, 45, 3.22)]
+    [TestCase(1, 2, 3, 0, 0.28)]
+    [TestCase(78, 546, 7, 496, 165.20)]
     public void EnsureFlexCalculationsAreCorrectDailyAndWeekly(
         decimal previousReading,
         decimal currentReading,
         int billingPeriod,
         decimal standingCharge,
-        RequestType requestType,
         decimal expectedCostResult)
     {
         //Arrange
-        _previousReadingRepository.GetPreviousReadingByMpanAndReqType(Arg.Any<string>(), Arg.Is<RequestType>(r => r == requestType)).Returns(previousReading);
+        _previousReadingRepository.GetPreviousReadingByMpanAndReqType(Arg.Any<string>(), Arg.Is<RequestType>(r => r != RequestType.CurrentUsage)).Returns(previousReading);
 
         _request.TariffType = TariffType.Flex;
-        _request.RequestType = requestType;
         _request.CurrentReading = currentReading;
         _request.BillingPeriod = billingPeriod;
         _request.StandingCharge = standingCharge;
+        _request.RequestType = RequestType.TodaysUsage;
 
         //Act
         var result = _calculationProvider.CalculateCost(_request);
@@ -116,34 +113,32 @@ internal sealed class CalculateCostTests
         //Assert
         Assert.That(string.IsNullOrEmpty(result.ErrorMessage), Is.True);
         Assert.That(result.Cost, Is.EqualTo(expectedCostResult));
+      
     }
 
     /// <summary>
     /// Test to ensure that cost calculations are correct for green tariff types
     /// This website is used to determine the expected results: https://www.electricitybillcalculator.com/
     /// </summary>
-    [TestCase(10, 20, 1, 45,RequestType.TodaysUsage, 3.31)]
-    [TestCase(1, 2, 3, 0, RequestType.TodaysUsage, 0.28)]
-    [TestCase(78, 546, 7, 496, RequestType.TodaysUsage,169.38)]
-    [TestCase(10, 20, 1, 45, RequestType.WeeklyUsage, 3.31)]
-    [TestCase(1, 2, 3, 0, RequestType.WeeklyUsage, 0.28)]
-    [TestCase(78, 546, 7, 496, RequestType.WeeklyUsage, 169.38)]
+
+    [TestCase(10, 20, 1, 45, 3.31)]
+    [TestCase(1, 2, 3, 0,  0.28)]
+    [TestCase(78, 546, 7, 496, 169.38)]
     public void EnsureGreenCalculationsAreCorrectDailyAndWeekly(
         decimal previousReading,
         decimal currentReading,
         int billingPeriod,
         decimal standingCharge,
-        RequestType requestType,
         decimal expectedCostResult)
     {
         //Arrange
-        _previousReadingRepository.GetPreviousReadingByMpanAndReqType(Arg.Any<string>(), Arg.Is<RequestType>(r => r == requestType)).Returns(previousReading);
+        _previousReadingRepository.GetPreviousReadingByMpanAndReqType(Arg.Any<string>(), Arg.Is<RequestType>(r => r != RequestType.CurrentUsage)).Returns(previousReading);
 
         _request.TariffType = TariffType.Green;
-        _request.RequestType = requestType;
         _request.CurrentReading = currentReading;
         _request.BillingPeriod = billingPeriod;
         _request.StandingCharge = standingCharge;
+        _request.RequestType = RequestType.TodaysUsage;
 
         //Act
         var result = _calculationProvider.CalculateCost(_request);
@@ -151,34 +146,32 @@ internal sealed class CalculateCostTests
         //Assert
         Assert.That(string.IsNullOrEmpty(result.ErrorMessage), Is.True);
         Assert.That(result.Cost, Is.EqualTo(expectedCostResult));
+       
     }
 
     /// <summary>
     /// Test to ensure that cost calculations are correct for off peak tariff types
     /// This website is used to determine the expected results: https://www.electricitybillcalculator.com/
     /// </summary>
-    [TestCase(10, 20, 1, 45, RequestType.TodaysUsage, 2.95)]
-    [TestCase(1, 2, 3, 0, RequestType.TodaysUsage, 0.25)]
-    [TestCase(78, 546, 7,  496, RequestType.TodaysUsage, 152.62)]
-    [TestCase(10, 20, 1, 45, RequestType.WeeklyUsage, 2.95)]
-    [TestCase(1, 2, 3, 0, RequestType.WeeklyUsage, 0.25)]
-    [TestCase(78, 546, 7, 496, RequestType.WeeklyUsage,152.62)]
+
+    [TestCase(10, 20, 1, 45, 2.95)]
+    [TestCase(1, 2, 3, 0, 0.25)]
+    [TestCase(78, 546, 7,  496,  152.62)]
     public void EnsureOffPeakCalculationsAreCorrectDailyAndWeekly(
         decimal previousReading,
         decimal currentReading,
         int billingPeriod,
         decimal standingCharge,
-        RequestType requestType,
         decimal expectedCostResult)
     {
         //Arrange
-        _previousReadingRepository.GetPreviousReadingByMpanAndReqType(Arg.Any<string>(), Arg.Is<RequestType>(r => r == requestType)).Returns(previousReading);
+        _previousReadingRepository.GetPreviousReadingByMpanAndReqType(Arg.Any<string>(), Arg.Is<RequestType>(r => r != RequestType.CurrentUsage)).Returns(previousReading);
 
         _request.TariffType = TariffType.OffPeak;
-        _request.RequestType = requestType;
         _request.CurrentReading = currentReading;
         _request.BillingPeriod = billingPeriod;
         _request.StandingCharge = standingCharge;
+        _request.RequestType = RequestType.TodaysUsage;
 
         //Act
         var result = _calculationProvider.CalculateCost(_request);
@@ -186,6 +179,7 @@ internal sealed class CalculateCostTests
         //Assert
         Assert.That(string.IsNullOrEmpty(result.ErrorMessage), Is.True);
         Assert.That(result.Cost, Is.EqualTo(expectedCostResult));
+       
     }
 
     /// <summary>
@@ -206,6 +200,7 @@ internal sealed class CalculateCostTests
         _request.CurrentReading = currentReading;
         _request.BillingPeriod = billingPeriod;
         _request.StandingCharge = standingCharge;
+        _request.RequestType = RequestType.TodaysUsage;
 
         //Act
         var result = _calculationProvider.CalculateCost(_request);
@@ -249,7 +244,7 @@ internal sealed class CalculateCostTests
     [TestCase(10, 1, 45, 3.31)]
     [TestCase(1, 3, 0,0.28)]
     [TestCase(468, 7, 496, 169.38)]
-    public void EnsureGreenCalculationsAreCorrectDailyAndWeekly(
+    public void EnsureGreenCalculationsAreCorrect(
         decimal currentReading,
         int billingPeriod,
         decimal standingCharge,
@@ -276,7 +271,7 @@ internal sealed class CalculateCostTests
     [TestCase(10, 1, 45, 2.95)]
     [TestCase(1, 3, 0,0.25)]
     [TestCase(468, 7, 496,152.62)]
-    public void EnsureOffPeakCalculationsAreCorrectDailyAndWeekly(
+    public void EnsureOffPeakCalculationsAreCorrect(
         decimal currentReading,
         int billingPeriod,
         decimal standingCharge,
@@ -295,10 +290,26 @@ internal sealed class CalculateCostTests
         Assert.That(string.IsNullOrEmpty(result.ErrorMessage), Is.True);
         Assert.That(result.Cost, Is.EqualTo(expectedCostResult));
     }
+    [Test]
+    public void EnsurePrevReadingNotSavedForCurrentUsage()
+    {
+        //Arrange
+        _request.RequestType = RequestType.CurrentUsage;
 
+        //Act
+        _ = _calculationProvider.CalculateCost(_request);
+
+        //Assert
+        _previousReadingRepository.DidNotReceive().AddOrUpdatePreviousReading(
+            Arg.Any<string>(),
+            Arg.Any<decimal>(),
+            Arg.Any<RequestType>()
+        );
+    }
     /// <summary>
     /// Test to ensure that the current reading is saved to the mock db as the new previous reading once calculations are done
     /// </summary>
+
     [TestCase(RequestType.TodaysUsage)]
     [TestCase(RequestType.WeeklyUsage)]
     public void PreviousReadingIsSaved(RequestType requestType)
