@@ -46,7 +46,7 @@
                 <Grid Grid.Row="0" ColumnDefinitions="*,*,*">
                     <Button x:Name="CurrentUsageTab" Text="Current Usages" FontSize="20" Style="{StaticResource TabButtonStyle}" Clicked="OnTabClicked" Grid.Column="0" />
                     <Button x:Name="TodayUsageTab" Text="Today's Usage"  FontSize="20" Style="{StaticResource TabButtonStyle}" Clicked="OnTabClicked" Grid.Column="1" />
-                    <Button x:Name="WeekUsageTab" Text="Week Usage"  FontSize="20" Style="{StaticResource TabButtonStyle}" Clicked="OnTabClicked" Grid.Column="2" />
+                    <Button x:Name="WeekUsageTab" Text="Weekly Usage"  FontSize="20" Style="{StaticResource TabButtonStyle}" Clicked="OnTabClicked" Grid.Column="2" />
                 </Grid>
 
                 <!-- Tab content -->
@@ -61,13 +61,6 @@
                         <Label x:Name="UsageCost" Text="£0.00" FontSize="30"  Style="{StaticResource UsageTextStyle}" />
                         <Label x:Name="UsageKW" Text="00.00KW" FontSize="30" Style="{StaticResource UsageTextStyle}" />
                     </StackLayout>
-
-                    <Image Grid.Column="1" 
-                           Source="lightning.png"
-                           HeightRequest="60"
-                           WidthRequest="50"
-                           HorizontalOptions="End"
-                           VerticalOptions="Start" />
                 </Grid>
             </Grid>
         </Grid>

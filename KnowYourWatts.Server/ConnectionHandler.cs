@@ -8,6 +8,7 @@ using KnowYourWatts.Server.DTO.Responses;
 using System.Security.Cryptography.X509Certificates;
 using System.Net.Security;
 using System.Security.Authentication;
+using KnowYourWatts.Server.DTO.Interfaces;
 
 namespace KnowYourWatts.Server;
 
@@ -28,9 +29,10 @@ public sealed class ConnectionHandler(
 
             sslStream.AuthenticateAsServer(
                 _certificateHandler.Certificate,
-                clientCertificateRequired: false,
-                enabledSslProtocols: SslProtocols.Tls12,
-                checkCertificateRevocation: false);
+                false,
+                SslProtocols.Tls12,
+                false
+            );
                 
             if (MonitorGrid()) 
             {
@@ -69,7 +71,6 @@ public sealed class ConnectionHandler(
 
             //Convert the JSON to an object so we can use the request
             var request = JsonConvert.DeserializeObject<ServerRequest>(receivedData);
-
             if (request is null)
             {
                 Console.WriteLine("The request did not contain any data when converted to an object.");
@@ -130,6 +131,7 @@ public sealed class ConnectionHandler(
         }
         catch (SocketException ex)
         {
+            //We don't respond to the client here as we are unable to communicate with them
             Console.WriteLine("Socket error: " + ex.Message);
         }
         catch (JsonReaderException ex)
@@ -177,16 +179,17 @@ public sealed class ConnectionHandler(
             return new($"An unknown error occurred when trying to calculate the cost: {ex.Message}");
         }
     }
+
     private static bool MonitorGrid()
     {
-        Random rnd = new Random();
+        Random rnd = new();
         while (true)
         {
-             bool gridIssue = rnd.Next(0, 10) < 0.5; // 30% chance of a grid issue
+            bool gridIssue = rnd.Next(0, 100) < 3; // 3% chance of a grid issue
+
             if (gridIssue)
-            {
                 Console.WriteLine("Grid issue detected!");
-            }
+
             return gridIssue;
         }
     }

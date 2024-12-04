@@ -1,4 +1,5 @@
 ﻿using KnowYourWatts.ClientUI.DTO.Enums;
+using KnowYourWatts.ClientUI.DTO.Interfaces;
 using KnowYourWatts.ClientUI.DTO.Requests;
 using KnowYourWatts.ClientUI.DTO.Response;
 using KnowYourWatts.ClientUI.Interfaces;
@@ -13,10 +14,8 @@ public class ServerRequestHandler(ClientSocket clientSocket, IEncryptionHelper e
 {
     private readonly ClientSocket ClientSocket = clientSocket;
     private readonly IEncryptionHelper _encryptionHelper = encryptionHelper;
-
     private string PublicKey = "";
-
-    public event Action<string> ErrorMessage;
+    public event Action<string> ErrorMessage = null!;
 
     // Entry point for the UI to send a request to the server
     public async Task<SmartMeterCalculationResponse?> SendRequestToServer(
@@ -33,13 +32,12 @@ public class ServerRequestHandler(ClientSocket clientSocket, IEncryptionHelper e
             if (string.IsNullOrEmpty(PublicKey))
                 await GetPublicKey();
 
-            //Change to multiple req types
-            var request = new CurrentUsageRequest(tariffType, initialReading, currentCost, billingPeriod, standingCharge);
+            // Create a new request object containing the data to use for the cost calculation
+            var request = new UsageRequest(tariffType, initialReading, currentCost, billingPeriod, standingCharge);
 
             var encryptedMpan = _encryptionHelper.EncryptData(Encoding.ASCII.GetBytes(mpan), PublicKey);
 
-
-            // Create a new request.
+            // Create a new request for the server containing the calulation data
             var serverRequest = new ServerRequest
             {
                 Mpan = mpan,
@@ -85,6 +83,7 @@ public class ServerRequestHandler(ClientSocket clientSocket, IEncryptionHelper e
             var encryptedMpan = _encryptionHelper.EncryptData(Encoding.ASCII.GetBytes(mpan), PublicKey);
 
             await ClientSocket.ConnectClientToServer();
+
             // Authenticate the stream as a client.
             ClientSocket.SslStream.AuthenticateAsClient("KnowYourWattsServer");
 
@@ -124,6 +123,7 @@ public class ServerRequestHandler(ClientSocket clientSocket, IEncryptionHelper e
             var receivedData = Encoding.ASCII.GetString(buffer, 0, bytesReceived);
 
             var response = JsonConvert.DeserializeObject<SmartMeterCalculationResponse>(receivedData);
+
             // Close the stream.
             ClientSocket.SslStream.Close();
 
@@ -157,7 +157,7 @@ public class ServerRequestHandler(ClientSocket clientSocket, IEncryptionHelper e
                 return;
             }
 
-            // Creates a public key request
+            // Creates a request to get the public key from the server
             var request = new ServerRequest
             {
                 Mpan = "",
@@ -206,7 +206,7 @@ public class ServerRequestHandler(ClientSocket clientSocket, IEncryptionHelper e
 
             // Checks certificate public key
             using var rsa = certificate.GetRSAPublicKey();
-            if (rsa == null)
+            if (rsa is null)
             {
                 ErrorMessage.Invoke("Failed to extract public key from the certificate.");
                 return;

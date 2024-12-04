@@ -6,6 +6,6 @@ public class MainThreadService : IMainThreadService
 {
     public void BeginInvokeOnMainThread(Action action)
     {
-        Microsoft.Maui.ApplicationModel.MainThread.BeginInvokeOnMainThread(action);
+        MainThread.BeginInvokeOnMainThread(action);
     }
 }

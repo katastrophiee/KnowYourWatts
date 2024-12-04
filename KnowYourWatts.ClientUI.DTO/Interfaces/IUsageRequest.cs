@@ -1,6 +1,6 @@
 ﻿using KnowYourWatts.ClientUI.DTO.Enums;
 
-namespace KnowYourWatts.ClientUI.DTO.Requests;
+namespace KnowYourWatts.ClientUI.DTO.Interfaces;
 
 public interface IUsageRequest
 {
@@ -11,4 +11,4 @@ public interface IUsageRequest
     public decimal StandingCharge { get; set; }
 
     public int BillingPeriod { get; set; }
-}   
+}

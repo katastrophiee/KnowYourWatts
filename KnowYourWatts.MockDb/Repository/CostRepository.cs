@@ -5,10 +5,10 @@ using System.Collections.Concurrent;
 
 namespace KnowYourWatts.MockDb.Repository;
 
-public class CostRepository : ICostRepository
+public sealed class CostRepository : ICostRepository
 {
+    // We use a concurrent dictionary to ensure thread safety, it uses the mpan and request type as the key to retrieve the correct client cost
     private ConcurrentDictionary<(string mpan, RequestType requestType), ClientCost> ClientCosts { get; set; }
-
 
     public CostRepository()
     {
@@ -19,6 +19,7 @@ public class CostRepository : ICostRepository
     {
         var key = (mpan, requestType);
 
+        //Reset the daily and weekly readings at the end of the day or week
         var resetDate = requestType == RequestType.TodaysUsage
             ? DateTime.Now.Date.AddDays(1).AddTicks(-1)
             : DateTime.Now.Date.AddDays((DayOfWeek.Monday - DateTime.Now.DayOfWeek + 7) % 7).AddTicks(-1);

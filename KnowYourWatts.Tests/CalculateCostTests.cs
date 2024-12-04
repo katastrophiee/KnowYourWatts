@@ -1,11 +1,9 @@
 ﻿using KnowYourWatts.MockDb.Interfaces;
-using KnowYourWatts.MockDb.Repository;
 using KnowYourWatts.Server;
 using KnowYourWatts.Server.DTO.Enums;
 using KnowYourWatts.Server.DTO.Models;
 using KnowYourWatts.Server.DTO.Requests;
 using NSubstitute;
-using NUnit.Framework.Constraints;
 
 namespace KnowYourWatts.Tests;
 
@@ -77,16 +75,13 @@ internal sealed class CalculateCostTests
 
         //Assert
         Assert.That(string.IsNullOrEmpty(result.ErrorMessage), Is.True);
-        Assert.That(result.Cost, Is.EqualTo(expectedCostResult)
-        
-       );
+        Assert.That(result.Cost, Is.EqualTo(expectedCostResult));
     }
 
     /// <summary>
     /// Test to ensure that cost calculations are correct for flex tariff types
     /// This website is used to determine the expected results: https://www.electricitybillcalculator.com/
     /// </summary>
-
     [TestCase(10, 20, 1, 45, 3.22)]
     [TestCase(1, 2, 3, 0, 0.28)]
     [TestCase(78, 546, 7, 496, 165.20)]
@@ -112,14 +107,12 @@ internal sealed class CalculateCostTests
         //Assert
         Assert.That(string.IsNullOrEmpty(result.ErrorMessage), Is.True);
         Assert.That(result.Cost, Is.EqualTo(expectedCostResult));
-      
     }
 
     /// <summary>
     /// Test to ensure that cost calculations are correct for green tariff types
     /// This website is used to determine the expected results: https://www.electricitybillcalculator.com/
     /// </summary>
-
     [TestCase(10, 20, 1, 45, 3.31)]
     [TestCase(1, 2, 3, 0,  0.28)]
     [TestCase(78, 546, 7, 496, 169.38)]
@@ -145,14 +138,12 @@ internal sealed class CalculateCostTests
         //Assert
         Assert.That(string.IsNullOrEmpty(result.ErrorMessage), Is.True);
         Assert.That(result.Cost, Is.EqualTo(expectedCostResult));
-       
     }
 
     /// <summary>
     /// Test to ensure that cost calculations are correct for off peak tariff types
     /// This website is used to determine the expected results: https://www.electricitybillcalculator.com/
     /// </summary>
-
     [TestCase(10, 20, 1, 45, 2.95)]
     [TestCase(1, 2, 3, 0, 0.25)]
     [TestCase(78, 546, 7,  496,  152.62)]
@@ -178,7 +169,6 @@ internal sealed class CalculateCostTests
         //Assert
         Assert.That(string.IsNullOrEmpty(result.ErrorMessage), Is.True);
         Assert.That(result.Cost, Is.EqualTo(expectedCostResult));
-       
     }
 
     /// <summary>
@@ -289,6 +279,10 @@ internal sealed class CalculateCostTests
         Assert.That(string.IsNullOrEmpty(result.ErrorMessage), Is.True);
         Assert.That(result.Cost, Is.EqualTo(expectedCostResult));
     }
+
+    /// <summary>
+    /// Test to ensure that the previous reading is not saved to the mock db when the request type is current usage
+    /// </summary>
     [Test]
     public void EnsurePrevReadingNotSavedForCurrentUsage()
     {
@@ -305,10 +299,10 @@ internal sealed class CalculateCostTests
             Arg.Any<RequestType>()
         );
     }
+
     /// <summary>
     /// Test to ensure that the current reading is saved to the mock db as the new previous reading once calculations are done
     /// </summary>
-
     [TestCase(RequestType.TodaysUsage)]
     [TestCase(RequestType.WeeklyUsage)]
     public void PreviousReadingIsSaved(RequestType requestType)
@@ -326,9 +320,6 @@ internal sealed class CalculateCostTests
             Arg.Any<RequestType>()
         );
     }
-
-    //NEED TO ADD TESTS TO CHECK CURRENT DOES NOT RUN THESE BITS OF CODE
-    //NEED TO REVERT TESTS BACK THAT ARE NOW THE WEEKLY AND DAILY ONES - ALL THAT WAS NEEDED WAS SOME SETUP
 
     /// <summary>
     /// Test to ensure that no error occurs when the previous reading is null 
@@ -371,14 +362,10 @@ internal sealed class CalculateCostTests
         var result = _calculationProvider.CalculateCost(_request);
 
         //Assert
-        Assert.Multiple(() =>
-        {
-            Assert.That(string.IsNullOrEmpty(result.ErrorMessage), Is.False);
-            Assert.That(result.ErrorMessage, Is.EqualTo("Current energy reading cannot be less than previous energy reading."));
-        });
+        Assert.That(string.IsNullOrEmpty(result.ErrorMessage), Is.False);
+        Assert.That(result.ErrorMessage, Is.EqualTo("Current energy reading cannot be less than previous energy reading."));
     }
  
-
     /// <summary>
     /// Test to ensure that an error message is returned when the tariff type recieved is not recognised
     /// </summary>
@@ -392,11 +379,8 @@ internal sealed class CalculateCostTests
         var result = _calculationProvider.CalculateCost(_request);
 
         //Assert
-        Assert.Multiple(() =>
-        {
-            Assert.That(string.IsNullOrEmpty(result.ErrorMessage), Is.False);
-            Assert.That(result.ErrorMessage, Is.EqualTo($"Tariff type '{_request.TariffType}' does not exist."));
-        });
+        Assert.That(string.IsNullOrEmpty(result.ErrorMessage), Is.False);
+        Assert.That(result.ErrorMessage, Is.EqualTo($"Tariff type '{_request.TariffType}' does not exist."));
     }
 
     /// <summary>

@@ -9,6 +9,7 @@ namespace KnowYourWatts.Server;
 public sealed class CertificateHandler : ICertificateHandler
 {
     public X509Certificate2 Certificate { get; set; }
+
     public CertificateHandler()
     {
         // Generate the certificate
@@ -75,20 +76,25 @@ public sealed class CertificateHandler : ICertificateHandler
         var request = new CertificateRequest(subjectName, rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
 
         request.CertificateExtensions.Add(
-        new X509EnhancedKeyUsageExtension(
-        new OidCollection { new Oid("1.3.6.1.5.5.7.3.1") }, // Server Authentication OID
-        critical: true));
+            new X509EnhancedKeyUsageExtension(
+                [new Oid("1.3.6.1.5.5.7.3.1")], // Server Authentication OID
+                true
+            )
+        );
 
         var sanBuilder = new SubjectAlternativeNameBuilder();
         sanBuilder.AddDnsName("KnowYourWattsServer");
         sanBuilder.AddIpAddress(ipAddress); // For localhost (127.0.0.1)
+
         request.CertificateExtensions.Add(sanBuilder.Build());
 
         request.CertificateExtensions.Add(
-        new X509BasicConstraintsExtension(false, false, 0, false));
+            new X509BasicConstraintsExtension(false, false, 0, false)
+        );
 
         request.CertificateExtensions.Add(
-        new X509KeyUsageExtension(X509KeyUsageFlags.DigitalSignature | X509KeyUsageFlags.KeyEncipherment, false));
+            new X509KeyUsageExtension(X509KeyUsageFlags.DigitalSignature | X509KeyUsageFlags.KeyEncipherment, false)
+        );
 
         // Create a self-signed certificate
         var certificate = request.CreateSelfSigned(DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(5));
