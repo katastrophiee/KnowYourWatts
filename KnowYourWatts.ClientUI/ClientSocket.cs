@@ -27,8 +27,10 @@ public class ClientSocket
                 }
                 else
                 {
+                    // Wraps socket in SSL stream
                     var networkStream = new NetworkStream(socket, ownsSocket: true);
                     SslStream = new SslStream(networkStream, leaveInnerStreamOpen: false, (sender, certificate, chain, sslPolicyErrors) => true);
+
                     Console.WriteLine("Successfully connected to the server.");
                     return;
                 }

@@ -8,6 +8,7 @@ public interface IRandomisedValueProvider
 
     int GenerateRandomTimeDelay();
 
-    int GenerateRandomTarrif();
+    int GenerateRandomTariff();
+
     decimal GenerateRandomStandingCharge();
 }

@@ -30,7 +30,7 @@ class RandomisedValueProvider : IRandomisedValueProvider
         return _random.Next(15000, 60000);
     }
 
-    public int GenerateRandomTarrif()
+    public int GenerateRandomTariff()
     {
         return _random.Next(0, 3);
     }

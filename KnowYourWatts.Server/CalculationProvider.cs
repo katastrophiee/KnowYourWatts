@@ -24,21 +24,20 @@ public sealed class CalculationProvider(
             if (previousReading is not null && request.CurrentReading < previousReading && request.RequestType is not RequestType.CurrentUsage)
                 return new("Current energy reading cannot be less than previous energy reading.");
 
-            var tarrifPrice = _tariffRepository.GetTariffPriceByType(request.TariffType);
+            var tariffPrice = _tariffRepository.GetTariffPriceByType(request.TariffType);
 
-            if (tarrifPrice is null)
+            if (tariffPrice is null)
                 return new($"Tariff type '{request.TariffType}' does not exist.");
 
             var energyUsed = 0m;
 
             //We use the difference between the current and previous readings to get the energy used
-
             energyUsed = previousReading is not null && request.RequestType != RequestType.CurrentUsage
                ? request.CurrentReading - previousReading.Value
                : request.CurrentReading;
 
             //We then calculate the cost of the electricity used using the tariff type
-            var costOfElectricity = energyUsed * tarrifPrice.PriceInPence;
+            var costOfElectricity = energyUsed * tariffPrice.PriceInPence;
 
             //We then calculate the total standing charge for the billing period
             var totalStandingCharge = request.StandingCharge * request.BillingPeriod;

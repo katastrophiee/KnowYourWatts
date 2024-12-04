@@ -6,9 +6,9 @@ namespace KnowYourWatts.ClientUI;
 
 public partial class MainPage : ContentPage
 {
-    public MeterReadings CurrentMeterReading = null!;
-    public MeterReadings DailyMeterReading = null!;
-    public MeterReadings WeeklyMeterReading = null!;
+    public MeterReadings _currentMeterReading = null!;
+    public MeterReadings _dailyMeterReading = null!;
+    public MeterReadings _weeklyMeterReading = null!;
 
     private DateTime _resetDailyReadingsDate;
     private DateTime _resetWeeklyReadingsDate;
@@ -16,9 +16,9 @@ public partial class MainPage : ContentPage
     readonly IRandomisedValueProvider _randomisedValueProvider;
     readonly IServerRequestHandler _serverRequestHandler;
 
-    private TariffType TariffType;
-    private decimal StandingCharge;
-    private string Mpan;
+    private TariffType _tariffType;
+    private decimal _standingCharge;
+    private string _mpan;
 
     private Button _activeTab = null!;
 
@@ -28,31 +28,31 @@ public partial class MainPage : ContentPage
     {
         _randomisedValueProvider = randomisedValueProvider;
         _serverRequestHandler = serverRequestHandler;
-         _mainThreadService = mainThreadService;
+        _mainThreadService = mainThreadService;
 
         _serverRequestHandler.ErrorMessage += ShowError;
 
-        CurrentMeterReading = new()
+        _currentMeterReading = new()
         {
             Cost = 0m,
             Usage = 0m
         };
 
-        DailyMeterReading = new()
+        _dailyMeterReading = new()
         {
             Cost = 0m,
             Usage = 0m
         };
 
-        WeeklyMeterReading = new()
+        _weeklyMeterReading = new()
         {
             Cost = 0m,
             Usage = 0m
         };
 
-        TariffType = (TariffType)Enum.ToObject(typeof(TariffType), _randomisedValueProvider.GenerateRandomTarrif());
-        StandingCharge = _randomisedValueProvider.GenerateRandomStandingCharge();
-        Mpan = _randomisedValueProvider.GenerateMpanForClient();
+        _tariffType = (TariffType)Enum.ToObject(typeof(TariffType), _randomisedValueProvider.GenerateRandomTariff());
+        _standingCharge = _randomisedValueProvider.GenerateRandomStandingCharge();
+        _mpan = _randomisedValueProvider.GenerateMpanForClient();
 
         InitializeComponent();
 
@@ -61,14 +61,8 @@ public partial class MainPage : ContentPage
         StartRandomReadingTimer();
 
         _resetDailyReadingsDate = DateTime.Now.Date.AddDays(1).AddTicks(-1);
-        _resetWeeklyReadingsDate = DateTime.Now.Date.AddDays((7 - (int)DateTime.Now.DayOfWeek) % 7).AddTicks(-1);
+        _resetWeeklyReadingsDate = DateTime.Now.Date.AddDays((DayOfWeek.Monday - DateTime.Now.DayOfWeek + 7) % 7).AddTicks(-1); ;
 
-    }
-
-    protected override async void OnAppearing()
-    {
-        base.OnAppearing();
-        //await _serverRequestHandler.GetPublicKey();
     }
 
     private void StartClock()
@@ -90,7 +84,7 @@ public partial class MainPage : ContentPage
     {
         var timer = new System.Timers.Timer
         {
-            Interval = 2000,//_randomisedValueProvider.GenerateRandomTimeDelay(),
+            Interval = _randomisedValueProvider.GenerateRandomTimeDelay(),
             AutoReset = false
         };
 
@@ -100,11 +94,11 @@ public partial class MainPage : ContentPage
 
             var randomReading = _randomisedValueProvider.GenerateRandomReading();
 
-            CurrentMeterReading.Usage = randomReading;
-            DailyMeterReading.Usage += randomReading;
-            WeeklyMeterReading.Usage += randomReading;
+            _currentMeterReading.Usage = randomReading;
+            _dailyMeterReading.Usage += randomReading;
+            _weeklyMeterReading.Usage += randomReading;
 
-            await SendCurrentReadingToServer();
+            await SendReadingToServerCurrent();
             await SendReadingToServerDaily();
             await SendReadingToServerWeekly();
 
@@ -114,18 +108,18 @@ public partial class MainPage : ContentPage
         timer.Start();
     }
 
-    public async Task SendCurrentReadingToServer()
+    public async Task SendReadingToServerCurrent()
     {
         try
         {
             var response = await _serverRequestHandler.SendRequestToServer(
-                CurrentMeterReading.Usage,
-                CurrentMeterReading.Cost,
+                _currentMeterReading.Usage,
+                _currentMeterReading.Cost,
                 RequestType.CurrentUsage,
-                TariffType,
+                _tariffType,
                 1,
-                StandingCharge,
-                Mpan
+                _standingCharge,
+                _mpan
             );
 
             if (response is null)
@@ -142,7 +136,7 @@ public partial class MainPage : ContentPage
 
             else if (response.Cost is not null)
             {
-                CurrentMeterReading.Cost = response.Cost.Value;
+                _currentMeterReading.Cost = response.Cost.Value;
             }
 
             await MainThread.InvokeOnMainThreadAsync(RefreshActiveTab);
@@ -158,13 +152,13 @@ public partial class MainPage : ContentPage
         try
         {
             var response = await _serverRequestHandler.SendRequestToServer(
-                DailyMeterReading.Usage,
-                DailyMeterReading.Cost,
+                _dailyMeterReading.Usage,
+                _dailyMeterReading.Cost,
                 RequestType.TodaysUsage,
-                TariffType,
+                _tariffType,
                 1,
-                StandingCharge,
-                Mpan
+                _standingCharge,
+                _mpan
             );
 
             if (response is null)
@@ -181,7 +175,7 @@ public partial class MainPage : ContentPage
 
             else if (response.Cost is not null)
             {
-                DailyMeterReading.Cost += response.Cost.Value;
+                _dailyMeterReading.Cost += response.Cost.Value;
             }
 
             await MainThread.InvokeOnMainThreadAsync(RefreshActiveTab);
@@ -197,13 +191,13 @@ public partial class MainPage : ContentPage
         try
         {
             var response = await _serverRequestHandler.SendRequestToServer(
-                WeeklyMeterReading.Usage,
-                WeeklyMeterReading.Cost,
+                _weeklyMeterReading.Usage,
+                _weeklyMeterReading.Cost,
                 RequestType.WeeklyUsage,
-                TariffType,
+                _tariffType,
                 7,
-                StandingCharge,
-                Mpan
+                _standingCharge,
+                _mpan
             );
 
             if (response is null)
@@ -220,7 +214,7 @@ public partial class MainPage : ContentPage
 
             else if (response.Cost is not null)
             {
-                WeeklyMeterReading.Cost += response.Cost.Value;
+                _weeklyMeterReading.Cost += response.Cost.Value;
             }
 
             await MainThread.InvokeOnMainThreadAsync(RefreshActiveTab);
@@ -235,18 +229,18 @@ public partial class MainPage : ContentPage
     {
         if (_activeTab == CurrentUsageTab)
         {
-            UsageCost.Text = $"£{CurrentMeterReading.Cost}";
-            UsageKW.Text = $"{decimal.Round(CurrentMeterReading.Usage,2)}KW";
+            UsageCost.Text = $"£{_currentMeterReading.Cost}";
+            UsageKW.Text = $"{decimal.Round(_currentMeterReading.Usage,2)}kWh";
         }
         else if (_activeTab == TodayUsageTab)
         {
-            UsageCost.Text = $"£{DailyMeterReading.Cost}";
-            UsageKW.Text = $"{decimal.Round(DailyMeterReading.Usage,2)}KW";
+            UsageCost.Text = $"£{_dailyMeterReading.Cost}";
+            UsageKW.Text = $"{decimal.Round(_dailyMeterReading.Usage,2)}kW";
         }
         else if (_activeTab == WeekUsageTab)
         {
-            UsageCost.Text = $"£{WeeklyMeterReading.Cost}";
-            UsageKW.Text = $"{decimal.Round(WeeklyMeterReading.Usage, 2)}KW";
+            UsageCost.Text = $"£{_weeklyMeterReading.Cost}";
+            UsageKW.Text = $"{decimal.Round(_weeklyMeterReading.Usage, 2)}kW";
         }
     }
 
@@ -258,8 +252,8 @@ public partial class MainPage : ContentPage
 
         if (currentTime >= _resetDailyReadingsDate)
         {
-            DailyMeterReading.Cost = 0;
-            DailyMeterReading.Usage = 0;
+            _dailyMeterReading.Cost = 0;
+            _dailyMeterReading.Usage = 0;
 
             _resetDailyReadingsDate = DateTime.Now.Date.AddDays(1).AddTicks(-1);
 
@@ -268,8 +262,8 @@ public partial class MainPage : ContentPage
 
         if (currentTime >= _resetWeeklyReadingsDate)
         {
-            WeeklyMeterReading.Cost = 0;
-            WeeklyMeterReading.Usage = 0;
+            _weeklyMeterReading.Cost = 0;
+            _weeklyMeterReading.Usage = 0;
 
             _resetWeeklyReadingsDate = DateTime.Now.Date.AddDays((DayOfWeek.Monday - DateTime.Now.DayOfWeek + 7) % 7).AddTicks(-1);
 

@@ -11,6 +11,7 @@ public sealed class Server(
 {
     private readonly IConnectionHandler _connectionHandler = connectionHandler;
     private readonly IPAddress _ipAddress = ipAddress;
+    private readonly IPEndPoint _localEndPoint = localEndPoint;
     private readonly bool _runServer = true;
 
     public void Start()
@@ -18,9 +19,9 @@ public sealed class Server(
         try
         {
             var listener = new Socket(_ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            listener.Bind(localEndPoint);
+            listener.Bind(_localEndPoint);
             listener.Listen(30);
-            Console.WriteLine($"Server started at {localEndPoint.Address}:{localEndPoint.Port}");
+            Console.WriteLine($"Server started at {_localEndPoint.Address}:{_localEndPoint.Port}");
 
             while (_runServer)
             {

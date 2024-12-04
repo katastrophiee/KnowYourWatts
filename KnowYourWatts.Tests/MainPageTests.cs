@@ -7,13 +7,12 @@ using System.Reflection;
 
 namespace KnowYourWatts.Tests;
 
-[TestFixture]
 public class MainPageTests
 {
-    private IRandomisedValueProvider _randomiseValueProvider;
-    private IServerRequestHandler _serverRequestHandler;
-    private IMainThreadService _mainThreadService;
-    private MainPage _mainPage;
+    private IRandomisedValueProvider _randomiseValueProvider = null!;
+    private IServerRequestHandler _serverRequestHandler = null!;
+    private IMainThreadService _mainThreadService = null!;
+    private MainPage _mainPage = null!;
 
     [SetUp]
     public void SetUp()
@@ -24,7 +23,8 @@ public class MainPageTests
         _randomiseValueProvider.GenerateMpanForClient().Returns("1234567890123");
         _randomiseValueProvider.GenerateRandomReading().Returns(1.5m);
         _randomiseValueProvider.GenerateRandomStandingCharge().Returns(0.5m);
-        _randomiseValueProvider.GenerateRandomTarrif().Returns((int)TariffType.Fixed);
+        _randomiseValueProvider.GenerateRandomTariff().Returns((int)TariffType.Fixed);
+        _randomiseValueProvider.GenerateRandomTimeDelay().Returns(1);
 
         _mainPage = new MainPage(
             _randomiseValueProvider,
@@ -46,15 +46,18 @@ public class MainPageTests
             Cost = 2.5m,
             ErrorMessage = ""
         };
+
         _serverRequestHandler
             .SendRequestToServer(Arg.Any<decimal>(), Arg.Any<decimal>(), Arg.Any<RequestType>(), Arg.Any<TariffType>(), Arg.Any<int>(), Arg.Any<decimal>(), Arg.Any<string>())
             .Returns(mockResponse);
+
         _mainThreadService.BeginInvokeOnMainThread(Arg.Any<Action>());
+
         // Act
-        await _mainPage.SendCurrentReadingToServer();
+        await _mainPage.SendReadingToServerCurrent();
 
         // Assert
-        Assert.That(_mainPage.CurrentMeterReading.Cost, Is.EqualTo(2.5));
+        Assert.That(_mainPage._currentMeterReading.Cost, Is.EqualTo(2.5));
     }
 
     /// <summary>
@@ -66,18 +69,25 @@ public class MainPageTests
     {
         // Arrange
         var errorMessage = "Test error";
+
         var mockResponse = new SmartMeterCalculationResponse
         {
             Cost = null,
             ErrorMessage = errorMessage
         };
 
-        _serverRequestHandler
-            .SendRequestToServer(Arg.Any<decimal>(), Arg.Any<decimal>(), Arg.Any<RequestType>(), Arg.Any<TariffType>(), Arg.Any<int>(), Arg.Any<decimal>(), Arg.Any<string>())
-            .Returns(Task.FromResult(mockResponse));
+        _serverRequestHandler.SendRequestToServer(
+            Arg.Any<decimal>(),
+            Arg.Any<decimal>(),
+            Arg.Any<RequestType>(),
+            Arg.Any<TariffType>(),
+            Arg.Any<int>(),
+            Arg.Any<decimal>(),
+            Arg.Any<string>())
+        .Returns(mockResponse);
 
         // Act
-        await _mainPage.SendCurrentReadingToServer();
+        await _mainPage.SendReadingToServerCurrent();
 
         // Assert
         await _serverRequestHandler.Received(1).SendRequestToServer(
@@ -89,8 +99,6 @@ public class MainPageTests
             Arg.Any<decimal>(),
             Arg.Any<string>()
         );
-
-        // Assuming ShowError updates a UI property, verify that error was set.
     }
 
     /// <summary>
@@ -101,9 +109,8 @@ public class MainPageTests
     public void UpdateTimeDisplay_ResetsDailyUsageAtMidnight()
     {
         // Arrange
-        _mainPage.DailyMeterReading.Usage = 10m;
-        _mainPage.DailyMeterReading.Cost = 5m;
-
+        _mainPage._dailyMeterReading.Usage = 10m;
+        _mainPage._dailyMeterReading.Cost = 5m;
         _mainPage.GetType().GetField("_resetDailyReadingsDate", BindingFlags.NonPublic | BindingFlags.Instance)
             ?.SetValue(_mainPage, DateTime.Now.Date.AddSeconds(-1));
 
@@ -112,8 +119,8 @@ public class MainPageTests
             ?.Invoke(_mainPage, null);
 
         // Assert
-        Assert.That(_mainPage.DailyMeterReading.Usage, Is.EqualTo(0));
-        Assert.That(_mainPage.DailyMeterReading.Cost, Is.EqualTo(0));
+        Assert.That(_mainPage._dailyMeterReading.Usage, Is.EqualTo(0));
+        Assert.That(_mainPage._dailyMeterReading.Cost, Is.EqualTo(0));
     }
 
     /// <summary>
@@ -124,11 +131,10 @@ public class MainPageTests
     public void UpdateTimeDisplay_ResetsWeeklyUsageOnSunday()
     {
         // Arrange
-        _mainPage.WeeklyMeterReading.Usage = 20m;
-        _mainPage.WeeklyMeterReading.Cost = 10m;
-
-        // Set the _resetWeeklyReadingsDate to a time that has just passed
         var lastSunday = DateTime.Now.Date.AddDays(-(int)DateTime.Now.DayOfWeek).AddSeconds(-1);
+
+        _mainPage._weeklyMeterReading.Usage = 20m;
+        _mainPage._weeklyMeterReading.Cost = 10m;
         _mainPage.GetType().GetField("_resetWeeklyReadingsDate", BindingFlags.NonPublic | BindingFlags.Instance)
             ?.SetValue(_mainPage, lastSunday);
 
@@ -137,8 +143,8 @@ public class MainPageTests
             ?.Invoke(_mainPage, null);
 
         // Assert
-        Assert.That(_mainPage.WeeklyMeterReading.Usage, Is.EqualTo(0), "Weekly usage should be reset to 0.");
-        Assert.That(_mainPage.WeeklyMeterReading.Cost, Is.EqualTo(0), "Weekly cost should be reset to 0.");
+        Assert.That(_mainPage._weeklyMeterReading.Usage, Is.EqualTo(0), "Weekly usage should be reset to 0.");
+        Assert.That(_mainPage._weeklyMeterReading.Cost, Is.EqualTo(0), "Weekly cost should be reset to 0.");
     }
 
     /// <summary>
@@ -152,19 +158,24 @@ public class MainPageTests
         var mockResponse = new SmartMeterCalculationResponse
         {
             Cost = 2.5m,
-            ErrorMessage = null
+            ErrorMessage = ""
         };
 
-        _serverRequestHandler.SendRequestToServer(Arg.Any<decimal>(), Arg.Any<decimal>(), Arg.Any<RequestType>(),
-                                                      Arg.Any<TariffType>(), Arg.Any<int>(), Arg.Any<decimal>(),
-                                                      Arg.Any<string>())
-                                 .Returns(mockResponse);
+        _serverRequestHandler.SendRequestToServer(
+            Arg.Any<decimal>(),
+            Arg.Any<decimal>(),
+            Arg.Any<RequestType>(),
+            Arg.Any<TariffType>(),
+            Arg.Any<int>(),
+            Arg.Any<decimal>(),
+            Arg.Any<string>())
+        .Returns(mockResponse);
 
         // Act
-        await _mainPage.SendCurrentReadingToServer();
+        await _mainPage.SendReadingToServerCurrent();
 
         // Assert
-        Assert.That(_mainPage.CurrentMeterReading.Cost, Is.EqualTo(2.5m), "Current meter reading cost should be updated.");
+        Assert.That(_mainPage._currentMeterReading.Cost, Is.EqualTo(2.5m), "Current meter reading cost should be updated.");
     }
 
     /// <summary>
@@ -178,19 +189,24 @@ public class MainPageTests
         var mockResponse = new SmartMeterCalculationResponse
         {
             Cost = 3.5m,
-            ErrorMessage = null
+            ErrorMessage = ""
         };
 
-        _serverRequestHandler.SendRequestToServer(Arg.Any<decimal>(), Arg.Any<decimal>(), Arg.Any<RequestType>(),
-                                                      Arg.Any<TariffType>(), Arg.Any<int>(), Arg.Any<decimal>(),
-                                                      Arg.Any<string>())
-                                 .Returns(mockResponse);
+        _serverRequestHandler.SendRequestToServer(
+            Arg.Any<decimal>(),
+            Arg.Any<decimal>(),
+            Arg.Any<RequestType>(),
+            Arg.Any<TariffType>(),
+            Arg.Any<int>(),
+            Arg.Any<decimal>(),
+            Arg.Any<string>())
+        .Returns(mockResponse);
 
         // Act
         await _mainPage.SendReadingToServerDaily();
 
         // Assert
-        Assert.That(_mainPage.DailyMeterReading.Cost, Is.EqualTo(3.5m), "Daily meter reading cost should be updated.");
+        Assert.That(_mainPage._dailyMeterReading.Cost, Is.EqualTo(3.5m), "Daily meter reading cost should be updated.");
     }
 
     /// <summary>
@@ -204,19 +220,24 @@ public class MainPageTests
         var mockResponse = new SmartMeterCalculationResponse
         {
             Cost = 5.0m,
-            ErrorMessage = null
+            ErrorMessage = ""
         };
 
-        _serverRequestHandler.SendRequestToServer(Arg.Any<decimal>(), Arg.Any<decimal>(), Arg.Any<RequestType>(),
-                                                      Arg.Any<TariffType>(), Arg.Any<int>(), Arg.Any<decimal>(),
-                                                      Arg.Any<string>())
-                                 .Returns(mockResponse);
+        _serverRequestHandler.SendRequestToServer(
+            Arg.Any<decimal>(),
+            Arg.Any<decimal>(),
+            Arg.Any<RequestType>(),
+            Arg.Any<TariffType>(),
+            Arg.Any<int>(),
+            Arg.Any<decimal>(),
+            Arg.Any<string>())
+        .Returns(mockResponse);
 
         // Act
         await _mainPage.SendReadingToServerWeekly();
 
         // Assert
-        Assert.That(_mainPage.WeeklyMeterReading.Cost, Is.EqualTo(5.0m), "Weekly meter reading cost should be updated.");
+        Assert.That(_mainPage._weeklyMeterReading.Cost, Is.EqualTo(5.0m), "Weekly meter reading cost should be updated.");
     }
 
     /// <summary>
@@ -234,17 +255,23 @@ public class MainPageTests
             ErrorMessage = errorMessage
         };
 
-        _serverRequestHandler.SendRequestToServer(Arg.Any<decimal>(), Arg.Any<decimal>(), Arg.Any<RequestType>(),
-                                                      Arg.Any<TariffType>(), Arg.Any<int>(), Arg.Any<decimal>(),
-                                                      Arg.Any<string>())
-                                 .Returns(mockResponse);
+        _serverRequestHandler.SendRequestToServer(
+            Arg.Any<decimal>(),
+            Arg.Any<decimal>(),
+            Arg.Any<RequestType>(),
+            Arg.Any<TariffType>(),
+            Arg.Any<int>(),
+            Arg.Any<decimal>(),
+            Arg.Any<string>())
+        .Returns(mockResponse);
 
         // Act
-        await _mainPage.SendCurrentReadingToServer();
+        await _mainPage.SendReadingToServerCurrent();
 
         // Assert
         _mainThreadService.Received().BeginInvokeOnMainThread(Arg.Any<Action>());
-        Assert.That(_mainPage.CurrentMeterReading.Cost, Is.EqualTo(0), "Current meter reading cost should remain unchanged.");
+
+        Assert.That(_mainPage._currentMeterReading.Cost, Is.EqualTo(0), "Current meter reading cost should remain unchanged.");
     }
 
     /// <summary>
@@ -262,17 +289,23 @@ public class MainPageTests
             ErrorMessage = errorMessage
         };
 
-        _serverRequestHandler.SendRequestToServer(Arg.Any<decimal>(), Arg.Any<decimal>(), Arg.Any<RequestType>(),
-                                                      Arg.Any<TariffType>(), Arg.Any<int>(), Arg.Any<decimal>(),
-                                                      Arg.Any<string>())
-                                 .Returns(mockResponse);
+        _serverRequestHandler.SendRequestToServer(
+            Arg.Any<decimal>(),
+            Arg.Any<decimal>(),
+            Arg.Any<RequestType>(),
+            Arg.Any<TariffType>(),
+            Arg.Any<int>(),
+            Arg.Any<decimal>(),
+            Arg.Any<string>())
+        .Returns(mockResponse);
 
         // Act
         await _mainPage.SendReadingToServerDaily();
 
         // Assert
         _mainThreadService.Received().BeginInvokeOnMainThread(Arg.Any<Action>());
-        Assert.That(_mainPage.DailyMeterReading.Cost, Is.EqualTo(0), "Daily meter reading cost should remain unchanged.");
+
+        Assert.That(_mainPage._dailyMeterReading.Cost, Is.EqualTo(0), "Daily meter reading cost should remain unchanged.");
     }
 
     /// <summary>
@@ -290,19 +323,21 @@ public class MainPageTests
             ErrorMessage = errorMessage
         };
 
-        _serverRequestHandler.SendRequestToServer(Arg.Any<decimal>(), Arg.Any<decimal>(), Arg.Any<RequestType>(),
-                                                      Arg.Any<TariffType>(), Arg.Any<int>(), Arg.Any<decimal>(),
-                                                      Arg.Any<string>())
-                                 .Returns(mockResponse);
+        _serverRequestHandler.SendRequestToServer(
+             Arg.Any<decimal>(),
+             Arg.Any<decimal>(),
+             Arg.Any<RequestType>(),
+             Arg.Any<TariffType>(),
+             Arg.Any<int>(),
+             Arg.Any<decimal>(),
+             Arg.Any<string>())
+         .Returns(mockResponse);
 
         // Act
         await _mainPage.SendReadingToServerWeekly();
 
         // Assert
         _mainThreadService.Received().BeginInvokeOnMainThread(Arg.Any<Action>());
-        Assert.That(_mainPage.WeeklyMeterReading.Cost, Is.EqualTo(0), "Weekly meter reading cost should remain unchanged.");
+        Assert.That(_mainPage._weeklyMeterReading.Cost, Is.EqualTo(0), "Weekly meter reading cost should remain unchanged.");
     }
-
 }
-
-

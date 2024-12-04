@@ -1,8 +1,9 @@
 ﻿using KnowYourWatts.ClientUI.DTO.Enums;
+using KnowYourWatts.ClientUI.DTO.Interfaces;
 
 namespace KnowYourWatts.ClientUI.DTO.Requests;
 
-public sealed class CurrentUsageRequest(TariffType tariffType, decimal currentReading, decimal currentCost, int billingPeriod, decimal standingCharge) : IUsageRequest
+public sealed class UsageRequest(TariffType tariffType, decimal currentReading, decimal currentCost, int billingPeriod, decimal standingCharge) : IUsageRequest
 {
     public TariffType TariffType { get; set; } = tariffType;
 

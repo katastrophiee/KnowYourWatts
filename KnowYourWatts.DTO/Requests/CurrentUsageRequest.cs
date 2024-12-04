@@ -1,4 +1,5 @@
 ﻿using KnowYourWatts.Server.DTO.Enums;
+using KnowYourWatts.Server.DTO.Interfaces;
 
 namespace KnowYourWatts.Server.DTO.Requests;
 
@@ -13,5 +14,4 @@ public sealed class CurrentUsageRequest : IUsageRequest
     public int BillingPeriod { get; set; }
 
     public decimal StandingCharge { get; set; }
- 
 }
